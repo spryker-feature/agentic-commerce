@@ -1,0 +1,932 @@
+<?xml version="1.0"?>
+<transfers xmlns="spryker:transfer-01" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="spryker:transfer-01 http://static.spryker.com/transfer-01.xsd">
+
+    <transfer name="AgenticCommerceClient" strict="true">
+        <property name="idAgenticCommerceClient" type="int"/>
+        <property name="clientIdentifier" type="string"/>
+        <property name="name" type="string"/>
+        <property name="clientUri" type="string"/>
+        <property name="logoUri" type="string"/>
+        <property name="redirectUris" type="string[]" singular="redirectUri"/>
+        <property name="scopeCeiling" type="string[]" singular="scopeCeilingItem"/>
+        <property name="registrationType" type="string"/>
+        <property name="trustLevel" type="string"/>
+        <property name="status" type="string"/>
+        <property name="blockedBy" type="string"/>
+        <property name="softwareId" type="string"/>
+        <property name="softwareVersion" type="string"/>
+        <property name="registrationMetadata" type="string"/>
+        <property name="metadataFetchedAt" type="string"/>
+        <property name="metadataExpiresAt" type="string"/>
+        <property name="createdAt" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceClientCriteria" strict="true">
+        <property name="agenticCommerceClientConditions" type="AgenticCommerceClientConditions"/>
+        <property name="sortCollection" type="Sort[]" singular="sort"/>
+        <property name="pagination" type="Pagination"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceClientConditions" strict="true">
+        <property name="clientIdentifiers" type="string[]" singular="clientIdentifier"/>
+        <property name="statuses" type="string[]" singular="status"/>
+        <property name="registrationTypes" type="string[]" singular="registrationType"/>
+        <property name="softwareIds" type="string[]" singular="softwareId"/>
+        <property name="redirectHosts" type="string[]" singular="redirectHost"/>
+        <property name="blockedByValues" type="string[]" singular="blockedByValue"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceClientCollection" strict="true">
+        <property name="agenticCommerceClients" type="AgenticCommerceClient[]" singular="agenticCommerceClient"/>
+        <property name="pagination" type="Pagination"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceClientCollectionRequest" strict="true">
+        <property name="agenticCommerceClients" type="AgenticCommerceClient[]" singular="agenticCommerceClient"/>
+        <property name="isTransactional" type="bool"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceClientCollectionResponse" strict="true">
+        <property name="agenticCommerceClients" type="AgenticCommerceClient[]" singular="agenticCommerceClient"/>
+        <property name="agenticCommerceConsents" type="AgenticCommerceConsent[]" singular="agenticCommerceConsent"/>
+        <property name="errors" type="Error[]" singular="error"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceAuthorizationRequest" strict="true">
+        <property name="clientId" type="string"/>
+        <property name="redirectUri" type="string"/>
+        <property name="responseType" type="string"/>
+        <property name="scope" type="string"/>
+        <property name="state" type="string"/>
+        <property name="codeChallenge" type="string"/>
+        <property name="codeChallengeMethod" type="string"/>
+        <property name="resource" type="string"/>
+        <property name="isLoopbackRedirect" type="bool"/>
+        <property name="authorizationDetails" type="string" description="The raw `authorization_details` parameter (RFC 9396)."/>
+    </transfer>
+
+    <transfer name="AgenticCommerceAuthorizationResponse" strict="true">
+        <property name="isValid" type="bool"/>
+        <property name="isRedirectable" type="bool"/>
+        <property name="errorCode" type="string"/>
+        <property name="errorDescription" type="string"/>
+        <property name="agenticCommerceClient" type="AgenticCommerceClient"/>
+        <property name="grantableScopes" type="string[]" singular="grantableScope"/>
+        <property name="authorizationRequest" type="AgenticCommerceAuthorizationRequest"/>
+        <property name="failureReason" type="string"/>
+        <property name="requestedConstraints" type="AgenticCommerceConsentConstraint[]" singular="requestedConstraint" description="The constraints the client requested through `authorization_details`, each with the stored constraint type."/>
+    </transfer>
+
+    <transfer name="AgenticCommerceAuthorizationDetailsParseResponse" strict="true">
+        <property name="isValid" type="bool"/>
+        <property name="errorDescription" type="string"/>
+        <property name="requestedConstraints" type="AgenticCommerceConsentConstraint[]" singular="requestedConstraint"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceClientMetadata" strict="true">
+        <property name="clientName" type="string"/>
+        <property name="tokenEndpointAuthMethodsSupported" type="string[]" singular="tokenEndpointAuthMethodSupported"/>
+        <property name="redirectUris" type="string[]" singular="redirectUri"/>
+        <property name="grantTypes" type="string[]" singular="grantType"/>
+        <property name="responseTypes" type="string[]" singular="responseType"/>
+        <property name="tokenEndpointAuthMethod" type="string"/>
+        <property name="scope" type="string"/>
+        <property name="clientUri" type="string"/>
+        <property name="logoUri" type="string"/>
+        <property name="softwareId" type="string"/>
+        <property name="softwareVersion" type="string"/>
+        <property name="clientId" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceClientMetadataValidationResponse" strict="true">
+        <property name="isValid" type="bool"/>
+        <property name="errorCode" type="string"/>
+        <property name="errorDescription" type="string"/>
+        <property name="acceptedScopes" type="string[]" singular="acceptedScope"/>
+        <property name="acceptedGrantTypes" type="string[]" singular="acceptedGrantType"/>
+        <property name="clientName" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceClientMetadataDocument" strict="true">
+        <property name="url" type="string"/>
+        <property name="isFetched" type="bool"/>
+        <property name="failureReason" type="string"/>
+        <property name="content" type="array" singular="contentItem"/>
+        <property name="cacheLifetimeSeconds" type="int"/>
+        <property name="connectedAddress" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceClientResolveResponse" strict="true">
+        <property name="agenticCommerceClient" type="AgenticCommerceClient"/>
+        <property name="failureReason" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceClientRegistrationRequest" strict="true">
+        <property name="rawRequest" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceClientRegistrationResponse" strict="true">
+        <property name="isSuccessful" type="bool"/>
+        <property name="errorCode" type="string"/>
+        <property name="errorDescription" type="string"/>
+        <property name="agenticCommerceClient" type="AgenticCommerceClient"/>
+        <property name="clientIdIssuedAt" type="int"/>
+        <property name="acceptedScopes" type="string[]" singular="acceptedScope"/>
+        <property name="grantTypes" type="string[]" singular="grantType"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceGrantableScopesRequest" strict="true">
+        <property name="principal" type="AgenticCommercePrincipal"/>
+        <property name="requestedScopes" type="string[]" singular="requestedScope"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceGrantableScopesResponse" strict="true">
+        <property name="grantableScopes" type="string[]" singular="grantableScope"/>
+        <property name="scopes" type="AgenticCommerceScope[]" singular="scope"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConsent" strict="true">
+        <property name="idAgenticCommerceConsent" type="int"/>
+        <property name="uuid" type="string"/>
+        <property name="clientIdentifier" type="string"/>
+        <property name="customerReference" type="string"/>
+        <property name="idCustomer" type="int"/>
+        <property name="principalType" type="string"/>
+        <property name="principalReference" type="string"/>
+        <property name="principal" type="AgenticCommercePrincipal"/>
+        <property name="idStore" type="int"/>
+        <property name="storeName" type="string"/>
+        <property name="grantedScopes" type="string[]" singular="grantedScope"/>
+        <property name="status" type="string"/>
+        <property name="expiresAt" type="string"/>
+        <property name="lastUsedAt" type="string"/>
+        <property name="revokedAt" type="string"/>
+        <property name="revokedBy" type="string"/>
+        <property name="createdAt" type="string"/>
+        <property name="durationInDays" type="int"/>
+        <property name="userIdentifier" type="string"/>
+        <property name="authorizationCode" type="string"/>
+        <property name="refreshTokenIdentifier" type="string"/>
+        <property name="agenticCommerceClient" type="AgenticCommerceClient"/>
+        <property name="constraints" type="AgenticCommerceConsentConstraint[]" singular="constraint"/>
+        <property name="clientNameAtConsent" type="string"/>
+        <property name="customer" type="Customer"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceHousekeepingReport" strict="true">
+        <property name="expiredConsentCount" type="int"/>
+        <property name="deletedClientCount" type="int"/>
+        <property name="prunedEventCount" type="int"/>
+        <property name="prunedConsentCount" type="int"/>
+        <property name="clearedClientDataEventCount" type="int"/>
+        <property name="isPruningSkipped" type="bool"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConsentEvent" strict="true">
+        <property name="idAgenticCommerceConsentEvent" type="int"/>
+        <property name="idAgenticCommerceConsent" type="int"/>
+        <property name="event" type="string"/>
+        <property name="actor" type="string"/>
+        <property name="actorReference" type="string"/>
+        <property name="scopes" type="string[]" singular="scope"/>
+        <property name="clientName" type="string"/>
+        <property name="createdAt" type="string"/>
+        <property name="constraints" type="AgenticCommerceConsentConstraint[]" singular="constraint"/>
+        <property name="consentUuid" type="string"/>
+        <property name="consentStatus" type="string"/>
+        <property name="consentRevokedAt" type="string"/>
+        <property name="clientIdentifier" type="string"/>
+        <property name="clientUri" type="string"/>
+        <property name="idCustomer" type="int"/>
+        <property name="ipAddress" type="string"/>
+        <property name="userAgent" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceRequestClientData" strict="true">
+        <property name="ipAddress" type="string"/>
+        <property name="userAgent" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceSalesOrderAttribution" strict="true">
+        <property name="idSalesOrder" type="int"/>
+        <property name="consentEvent" type="AgenticCommerceConsentEvent"/>
+        <property name="createdAt" type="string"/>
+    </transfer>
+
+    <transfer name="Order">
+        <property name="idSalesOrder" type="int"/>
+        <property name="store" type="string"/>
+        <property name="currencyIsoCode" type="string"/>
+        <property name="customerReference" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConsentConstraint" strict="true">
+        <property name="type" type="string"/>
+        <property name="value" type="array" singular="valueItem"/>
+        <property name="valueLabels" type="array" singular="valueLabel" description="For a constraint that selects several values, each selected value mapped to the name shown for it. Filled when consents are read, never stored."/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConstraintFieldRequest" strict="true">
+        <property name="principal" type="AgenticCommercePrincipal"/>
+        <property name="scopes" type="string[]" singular="scope"/>
+        <property name="storeName" type="string"/>
+        <property name="currencyCode" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConstraintField" strict="true">
+        <property name="type" type="string"/>
+        <property name="labelGlossaryKey" type="string"/>
+        <property name="inputKind" type="string"/>
+        <property name="currencyCode" type="string"/>
+        <property name="isRequired" type="bool"/>
+        <property name="hintGlossaryKey" type="string"/>
+        <property name="hintParameters" type="array" singular="hintParameter"/>
+        <property name="options" type="array" singular="option" description="The values to choose from, each mapped to its label: a glossary key, or a name shown as it is, such as a merchant name."/>
+        <property name="optionParents" type="array" singular="optionParent" description="For a tree input kind, each option value mapped to its parent option value; a root option has none."/>
+        <property name="valueKey" type="string" description="For an input kind that selects several values, the key of the constraint value they are submitted under."/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConstraintFieldCollection" strict="true">
+        <property name="fields" type="AgenticCommerceConstraintField[]" singular="field"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceOrderPlacementCheckRequest" strict="true">
+        <property name="context" type="AgenticCommerceContext"/>
+        <property name="consent" type="AgenticCommerceConsent"/>
+        <property name="quote" type="Quote"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceOrderPlacementCheck" strict="true">
+        <property name="result" type="string"/>
+        <property name="reason" type="string"/>
+        <property name="reasonDescription" type="string"/>
+        <property name="approvalStatus" type="string"/>
+        <property name="approvers" type="CompanyUser[]" singular="approver"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceCartHandoff" strict="true">
+        <property name="idAgenticCommerceCartHandoff" type="int"/>
+        <property name="tokenHash" type="string"/>
+        <property name="idAgenticCommerceConsent" type="int"/>
+        <property name="consentUuid" type="string"/>
+        <property name="quoteUuid" type="string"/>
+        <property name="principalType" type="string"/>
+        <property name="principalReference" type="string"/>
+        <property name="idStore" type="int"/>
+        <property name="storeName" type="string"/>
+        <property name="expiresAt" type="string"/>
+        <property name="usedAt" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceCartHandoffRequest" strict="true">
+        <property name="consentUuid" type="string"/>
+        <property name="quoteUuid" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceCartHandoffResponse" strict="true">
+        <property name="token" type="string"/>
+        <property name="expiresAt" type="string"/>
+        <property name="errors" type="Error[]" singular="error"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceCartHandoffRedeemRequest" strict="true">
+        <property name="token" type="string"/>
+        <property name="customerReference" type="string"/>
+        <property name="companyUserUuid" type="string"/>
+        <property name="storeName" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceCartHandoffRedeemResponse" strict="true">
+        <property name="isValid" type="bool"/>
+        <property name="quote" type="Quote"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConsentCollectionRequest" strict="true">
+        <property name="agenticCommerceConsents" type="AgenticCommerceConsent[]" singular="agenticCommerceConsent"/>
+        <property name="authorizationRequest" type="AgenticCommerceAuthorizationRequest"/>
+        <property name="isTransactional" type="bool"/>
+        <property name="requestClientData" type="AgenticCommerceRequestClientData"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConsentCollectionResponse" strict="true">
+        <property name="agenticCommerceConsents" type="AgenticCommerceConsent[]" singular="agenticCommerceConsent"/>
+        <property name="agenticCommerceClients" type="AgenticCommerceClient[]" singular="agenticCommerceClient"/>
+        <property name="errors" type="Error[]" singular="error"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConsentCriteria" strict="true">
+        <property name="agenticCommerceConsentConditions" type="AgenticCommerceConsentConditions"/>
+        <property name="sortCollection" type="Sort[]" singular="sort"/>
+        <property name="pagination" type="Pagination"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConsentConditions" strict="true">
+        <property name="uuids" type="string[]" singular="uuid"/>
+        <property name="customerReferences" type="string[]" singular="customerReference"/>
+        <property name="statuses" type="string[]" singular="status"/>
+        <property name="principalTypes" type="string[]" singular="principalType"/>
+        <property name="principalReferences" type="string[]" singular="principalReference"/>
+        <property name="clientIdentifiers" type="string[]" singular="clientIdentifier"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConsentCollection" strict="true">
+        <property name="agenticCommerceConsents" type="AgenticCommerceConsent[]" singular="agenticCommerceConsent"/>
+        <property name="pagination" type="Pagination"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConsentRevocationRequest" strict="true">
+        <property name="consentUuids" type="string[]" singular="consentUuid"/>
+        <property name="principalType" type="string"/>
+        <property name="principalReference" type="string"/>
+        <property name="customerReference" type="string"/>
+        <property name="clientIdentifier" type="string"/>
+        <property name="revokedBy" type="string"/>
+        <property name="actorReference" type="string"/>
+        <property name="requestClientData" type="AgenticCommerceRequestClientData"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceCompanyConsentCriteria" strict="true">
+        <property name="agenticCommerceCompanyConsentConditions" type="AgenticCommerceCompanyConsentConditions"/>
+        <property name="sortCollection" type="Sort[]" singular="sort"/>
+        <property name="pagination" type="Pagination"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceCompanyConsentConditions" strict="true">
+        <property name="idCompany" type="int"/>
+        <property name="companyUserUuid" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceCompanyAdminRevocationRequest" strict="true">
+        <property name="consentUuid" type="string"/>
+        <property name="idCompany" type="int"/>
+        <property name="companyUserUuid" type="string"/>
+        <property name="requestClientData" type="AgenticCommerceRequestClientData"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConsentUsageRequest" strict="true">
+        <property name="consentUuid" type="string"/>
+        <property name="clientIdentifier" type="string"/>
+        <property name="customerReference" type="string"/>
+        <property name="storeName" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceConsentUsageResponse" strict="true">
+        <property name="isValid" type="bool"/>
+        <property name="agenticCommerceConsent" type="AgenticCommerceConsent"/>
+        <property name="errors" type="Error[]" singular="error"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceRefreshTokenRevocationRequest" strict="true">
+        <property name="token" type="string"/>
+        <property name="clientIdentifier" type="string"/>
+        <property name="requestClientData" type="AgenticCommerceRequestClientData"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceRefreshTokenRevocationResponse" strict="true">
+        <property name="isSuccessful" type="bool"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceAccessToken" strict="true">
+        <property name="issuer" type="string"/>
+        <property name="audience" type="string[]" singular="audienceItem"/>
+        <property name="clientId" type="string"/>
+        <property name="subject" type="string"/>
+        <property name="storeName" type="string"/>
+        <property name="consentUuid" type="string"/>
+        <property name="scopes" type="string[]" singular="scope"/>
+        <property name="expiresAt" type="string"/>
+        <property name="tokenIdentifier" type="string"/>
+        <property name="authorizationDetails" type="array" singular="authorizationDetail" description="The granted constraints as RFC 9396 authorization details objects."/>
+    </transfer>
+
+    <transfer name="AgenticCommerceAccessTokenValidationResponse" strict="true">
+        <property name="isValid" type="bool"/>
+        <property name="agenticCommerceAccessToken" type="AgenticCommerceAccessToken"/>
+        <property name="errorCode" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceAuthorizationDetailsTypeCriteria" strict="true">
+        <property name="agenticCommerceAuthorizationDetailsTypeConditions" type="AgenticCommerceAuthorizationDetailsTypeConditions"/>
+        <property name="sortCollection" type="Sort[]" singular="sort"/>
+        <property name="pagination" type="Pagination"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceAuthorizationDetailsTypeConditions" strict="true">
+    </transfer>
+
+    <transfer name="AgenticCommerceAuthorizationDetailsTypeCollection" strict="true">
+        <property name="authorizationDetailsTypes" type="string[]" singular="authorizationDetailsType"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceProtectedResourceMetadata" strict="true">
+        <property name="resource" type="string"/>
+        <property name="authorizationServers" type="string[]" singular="authorizationServer"/>
+        <property name="scopesSupported" type="string[]" singular="scopeSupported"/>
+        <property name="bearerMethodsSupported" type="string[]" singular="bearerMethodSupported"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceAuthorizationServerMetadata" strict="true">
+        <property name="issuer" type="string"/>
+        <property name="authorizationEndpoint" type="string"/>
+        <property name="tokenEndpoint" type="string"/>
+        <property name="revocationEndpoint" type="string"/>
+        <property name="responseTypesSupported" type="string[]" singular="responseTypeSupported"/>
+        <property name="grantTypesSupported" type="string[]" singular="grantTypeSupported"/>
+        <property name="codeChallengeMethodsSupported" type="string[]" singular="codeChallengeMethodSupported"/>
+        <property name="tokenEndpointAuthMethodsSupported" type="string[]" singular="tokenEndpointAuthMethodSupported"/>
+        <property name="revocationEndpointAuthMethodsSupported" type="string[]" singular="revocationEndpointAuthMethodSupported"/>
+        <property name="scopesSupported" type="string[]" singular="scopeSupported"/>
+        <property name="authorizationResponseIssParameterSupported" type="bool"/>
+        <property name="clientIdMetadataDocumentSupported" type="bool"/>
+        <property name="registrationEndpoint" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommercePrincipal" strict="true">
+        <property name="principalType" type="string"/>
+        <property name="principalReference" type="string"/>
+        <property name="customerReference" type="string"/>
+        <property name="displayName" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommercePrincipalCollection" strict="true">
+        <property name="principals" type="AgenticCommercePrincipal[]" singular="principal"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceScope" strict="true">
+        <property name="name" type="string"/>
+        <property name="glossaryKey" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceScopeCriteria" strict="true">
+        <property name="agenticCommerceScopeConditions" type="AgenticCommerceScopeConditions"/>
+        <property name="sortCollection" type="Sort[]" singular="sort"/>
+        <property name="pagination" type="Pagination"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceScopeConditions" strict="true">
+        <property name="names" type="string[]" singular="name"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceScopeCollection" strict="true">
+        <property name="scopes" type="AgenticCommerceScope[]" singular="scope"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceProtectedResource" strict="true">
+        <property name="name" type="string"/>
+        <property name="pathPrefix" type="string"/>
+        <property name="resourceUri" type="string"/>
+        <property name="scopes" type="string[]" singular="scope"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceContext" strict="true">
+        <property name="clientIdentifier" type="string"/>
+        <property name="consentUuid" type="string"/>
+        <property name="principalType" type="string"/>
+        <property name="principalReference" type="string"/>
+        <property name="customer" type="Customer"/>
+        <property name="companyUserUuid" type="string"/>
+        <property name="companyBusinessUnitUuid" type="string"/>
+        <property name="scopes" type="string[]" singular="scope"/>
+        <property name="storeName" type="string"/>
+        <property name="resourceName" type="string"/>
+        <property name="authorizationDetails" type="array" singular="authorizationDetail" description="The granted constraints as RFC 9396 authorization details objects, read from the access token."/>
+    </transfer>
+
+    <transfer name="AgenticCommercePrincipalCustomerRequest" strict="true">
+        <property name="principalType" type="string"/>
+        <property name="principalReference" type="string"/>
+        <property name="customerReference" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommercePrincipalCustomerResponse" strict="true">
+        <property name="customer" type="Customer"/>
+        <property name="isActive" type="bool"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceRequestMetaData" strict="true">
+        <property name="consentUuid" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceActingCompanyUser" strict="true">
+        <property name="companyUserUuid" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceCascadeActor" strict="true">
+        <property name="actor" type="string"/>
+        <property name="actorReference" type="string"/>
+    </transfer>
+
+    <transfer name="OauthAccessTokenValidationRequest">
+        <property name="accessToken" type="string"/>
+    </transfer>
+
+    <transfer name="OauthAccessTokenValidationResponse">
+        <property name="isValid" type="bool"/>
+        <property name="error" type="OauthError"/>
+    </transfer>
+
+    <transfer name="OauthError">
+        <property name="errorType" type="string"/>
+        <property name="message" type="string"/>
+    </transfer>
+
+    <transfer name="Error">
+        <property name="message" type="string"/>
+        <property name="entityIdentifier" type="string"/>
+        <property name="parameters" type="array" singular="parameter"/>
+    </transfer>
+
+    <transfer name="OauthClient">
+        <property name="identifier" type="string"/>
+        <property name="name" type="string"/>
+        <property name="redirectUri" type="string"/>
+        <property name="isConfidential" type="bool"/>
+    </transfer>
+
+    <transfer name="OauthRequest">
+        <property name="grantType" type="string"/>
+        <property name="clientId" type="string"/>
+        <property name="code" type="string"/>
+        <property name="codeVerifier" type="string"/>
+        <property name="redirectUri" type="string"/>
+        <property name="refreshToken" type="string"/>
+        <property name="scope" type="string"/>
+        <property name="resource" type="string"/>
+        <property name="glueAuthenticationRequestContext" type="GlueAuthenticationRequestContext"/>
+    </transfer>
+
+    <transfer name="OauthResponse">
+        <property name="isValid" type="bool"/>
+        <property name="expiresIn" type="int"/>
+        <property name="accessToken" type="string"/>
+        <property name="refreshToken" type="string"/>
+        <property name="scope" type="string"/>
+        <property name="authorizationDetails" type="array" singular="authorizationDetail" description="The granted constraints as RFC 9396 authorization details objects."/>
+        <property name="error" type="OauthError"/>
+    </transfer>
+
+    <transfer name="GlueAuthenticationRequestContext">
+        <property name="requestApplication" type="string"/>
+    </transfer>
+
+    <transfer name="OauthGrantTypeConfiguration">
+        <property name="identifier" type="string"/>
+        <property name="builderFullyQualifiedClassName" type="string"/>
+    </transfer>
+
+    <transfer name="OauthUser">
+        <property name="isSuccess" type="bool"/>
+        <property name="userIdentifier" type="string"/>
+        <property name="customerReference" type="string"/>
+        <property name="idCompanyUser" type="string"/>
+    </transfer>
+
+    <transfer name="OauthAuthorizationCode" strict="true">
+        <property name="code" type="string"/>
+        <property name="clientId" type="string"/>
+        <property name="redirectUri" type="string"/>
+        <property name="userIdentifier" type="string"/>
+        <property name="scopes" type="string[]" singular="scope"/>
+        <property name="codeChallenge" type="string"/>
+        <property name="codeChallengeMethod" type="string"/>
+        <property name="requestApplication" type="string"/>
+        <property name="payloadExtension" type="array" singular="payloadExtensionItem" associative="true"/>
+    </transfer>
+
+    <transfer name="OauthAuthorizationCodeCollectionRequest" strict="true">
+        <property name="oauthAuthorizationCodes" type="OauthAuthorizationCode[]" singular="oauthAuthorizationCode"/>
+        <property name="isTransactional" type="bool"/>
+    </transfer>
+
+    <transfer name="OauthAuthorizationCodeCollectionResponse" strict="true">
+        <property name="oauthAuthorizationCodes" type="OauthAuthorizationCode[]" singular="oauthAuthorizationCode"/>
+        <property name="errors" type="Error[]" singular="error"/>
+    </transfer>
+
+    <transfer name="OauthAuthorizationCodeCollectionDeleteCriteria" strict="true">
+        <property name="oauthAuthorizationCodeConditions" type="OauthAuthorizationCodeConditions"/>
+    </transfer>
+
+    <transfer name="OauthAuthorizationCodeConditions" strict="true">
+        <property name="identifiers" type="string[]" singular="identifier"/>
+    </transfer>
+
+    <transfer name="Customer">
+        <property name="idCustomer" type="int"/>
+        <property name="customerReference" type="string"/>
+        <property name="email" type="string"/>
+        <property name="firstName" type="string"/>
+        <property name="lastName" type="string"/>
+        <property name="companyUserTransfer" type="CompanyUser"/>
+    </transfer>
+
+    <transfer name="CustomerResponse">
+        <property name="isSuccess" type="bool"/>
+        <property name="customerTransfer" type="Customer"/>
+    </transfer>
+
+    <transfer name="Locale">
+        <property name="localeName" type="string"/>
+    </transfer>
+
+    <transfer name="Store">
+        <property name="idStore" type="int"/>
+        <property name="name" type="string"/>
+        <property name="defaultCurrencyIsoCode" type="string"/>
+        <property name="defaultLocaleIsoCode" type="string"/>
+        <property name="timezone" type="string"/>
+    </transfer>
+
+    <transfer name="Sort">
+        <property name="field" type="string"/>
+        <property name="isAscending" type="bool"/>
+    </transfer>
+
+    <transfer name="User">
+        <property name="username" type="string"/>
+    </transfer>
+
+    <transfer name="Pagination">
+        <property name="page" type="int"/>
+        <property name="maxPerPage" type="int"/>
+        <property name="nbResults" type="int"/>
+        <property name="offset" type="int"/>
+        <property name="limit" type="int"/>
+        <property name="firstIndex" type="int"/>
+        <property name="lastIndex" type="int"/>
+        <property name="firstPage" type="int"/>
+        <property name="lastPage" type="int"/>
+        <property name="nextPage" type="int"/>
+        <property name="previousPage" type="int"/>
+    </transfer>
+
+    <transfer name="CustomerIdentifier">
+        <property name="customerReference" type="string"/>
+        <property name="idCustomer" type="int"/>
+    </transfer>
+
+    <transfer name="CustomerCollectionCriteria" strict="true">
+        <property name="customerConditions" type="CustomerConditions"/>
+    </transfer>
+
+    <transfer name="CustomerConditions" strict="true">
+        <property name="customerReferences" type="string[]" singular="customerReference"/>
+    </transfer>
+
+    <transfer name="CustomerCollection">
+        <property name="customers" type="Customer[]" singular="customer"/>
+    </transfer>
+
+    <transfer name="Quote">
+        <property name="uuid" type="string"/>
+        <property name="customerReference" type="string"/>
+        <property name="customer" type="Customer"/>
+        <property name="currency" type="Currency"/>
+        <property name="store" type="Store"/>
+        <property name="totals" type="Totals"/>
+        <property name="quoteApprovals" type="QuoteApproval[]" singular="quoteApproval"/>
+        <property name="billingAddress" type="Address"/>
+        <property name="items" type="Item[]" singular="item"/>
+    </transfer>
+
+    <transfer name="Item">
+        <property name="shipment" type="Shipment"/>
+        <property name="merchantReference" type="string"/>
+        <property name="idProductAbstract" type="int"/>
+        <property name="sku" type="string"/>
+    </transfer>
+
+    <transfer name="Category">
+        <property name="idCategory" type="int"/>
+        <property name="categoryKey" type="string"/>
+        <property name="isActive" type="bool"/>
+        <property name="storeRelation" type="StoreRelation"/>
+        <property name="nodeCollection" type="NodeCollection"/>
+        <property name="localizedAttributes" type="CategoryLocalizedAttributes[]" singular="localizedAttributes"/>
+    </transfer>
+
+    <transfer name="CategoryLocalizedAttributes">
+        <property name="name" type="string"/>
+        <property name="locale" type="Locale"/>
+    </transfer>
+
+    <transfer name="CategoryCriteria">
+        <property name="categoryConditions" type="CategoryConditions" strict="true"/>
+    </transfer>
+
+    <transfer name="CategoryConditions" strict="true">
+        <property name="categoryKeys" type="string[]" singular="categoryKey" strict="true"/>
+    </transfer>
+
+    <transfer name="CategoryCollection">
+        <property name="categories" type="Category[]" singular="category"/>
+    </transfer>
+
+    <transfer name="CategoryNodeCriteria">
+        <property name="categoryIds" type="int[]" singular="idCategory"/>
+        <property name="categoryNodeIds" type="int[]" singular="idCategoryNode"/>
+    </transfer>
+
+    <transfer name="NodeCollection">
+        <property name="nodes" type="Node[]" singular="node"/>
+    </transfer>
+
+    <transfer name="Node">
+        <property name="idCategoryNode" type="int"/>
+        <property name="fkCategory" type="int"/>
+        <property name="fkParentCategoryNode" type="int"/>
+        <property name="isMain" type="bool"/>
+        <property name="isRoot" type="bool"/>
+    </transfer>
+
+    <transfer name="ProductCategoryCriteria">
+        <property name="productCategoryConditions" type="ProductCategoryConditions"/>
+    </transfer>
+
+    <transfer name="ProductCategoryConditions">
+        <property name="productAbstractIds" type="int[]" singular="idProductAbstract"/>
+    </transfer>
+
+    <transfer name="ProductCategoryCollection">
+        <property name="productCategories" type="ProductCategory[]" singular="productCategory"/>
+    </transfer>
+
+    <transfer name="ProductCategory">
+        <property name="fkProductAbstract" type="int"/>
+        <property name="fkCategory" type="int"/>
+    </transfer>
+
+    <transfer name="StoreRelation">
+        <property name="stores" type="Store[]" singular="stores"/>
+    </transfer>
+
+    <transfer name="Merchant">
+        <property name="name" type="string"/>
+        <property name="merchantReference" type="string"/>
+    </transfer>
+
+    <transfer name="MerchantCriteria">
+        <property name="merchantReferences" type="string[]" singular="merchantReference"/>
+        <property name="isActive" type="bool"/>
+        <property name="storeNames" type="string[]" singular="storeName"/>
+    </transfer>
+
+    <transfer name="MerchantCollection">
+        <property name="merchants" type="Merchant[]" singular="merchants"/>
+    </transfer>
+
+    <transfer name="Shipment">
+        <property name="shippingAddress" type="Address"/>
+    </transfer>
+
+    <transfer name="Address">
+        <property name="address1" type="string"/>
+        <property name="address2" type="string"/>
+        <property name="address3" type="string"/>
+        <property name="zipCode" type="string"/>
+        <property name="city" type="string"/>
+        <property name="iso2Code" type="string"/>
+    </transfer>
+
+    <transfer name="CompanyUnitAddress">
+        <property name="address1" type="string"/>
+        <property name="address2" type="string"/>
+        <property name="address3" type="string"/>
+        <property name="zipCode" type="string"/>
+        <property name="city" type="string"/>
+        <property name="iso2Code" type="string"/>
+    </transfer>
+
+    <transfer name="CompanyUnitAddressCollection">
+        <property name="companyUnitAddresses" type="CompanyUnitAddress[]" singular="companyUnitAddress"/>
+    </transfer>
+
+    <transfer name="CompanyUnitAddressCriteriaFilter">
+        <property name="idCompanyBusinessUnit" type="int"/>
+    </transfer>
+
+    <transfer name="QuoteResponse">
+        <property name="quoteTransfer" type="Quote"/>
+        <property name="isSuccessful" type="bool"/>
+    </transfer>
+
+    <transfer name="Currency">
+        <property name="code" type="string"/>
+    </transfer>
+
+    <transfer name="Totals">
+        <property name="grandTotal" type="int"/>
+    </transfer>
+
+    <transfer name="QuoteApproval">
+        <property name="status" type="string"/>
+    </transfer>
+
+    <transfer name="CheckoutResponse">
+        <property name="isSuccess" type="bool"/>
+        <property name="errors" type="CheckoutError[]" singular="error"/>
+    </transfer>
+
+    <transfer name="SaveOrder">
+        <property name="idSalesOrder" type="int"/>
+    </transfer>
+
+    <transfer name="CheckoutError">
+        <property name="message" type="string"/>
+    </transfer>
+
+    <transfer name="CompanyUser">
+        <property name="idCompanyUser" type="int"/>
+        <property name="fkCompany" type="int"/>
+        <property name="uuid" type="string"/>
+        <property name="isActive" type="bool"/>
+        <property name="customer" type="Customer"/>
+        <property name="company" type="Company"/>
+        <property name="companyBusinessUnit" type="CompanyBusinessUnit"/>
+        <property name="fkCompanyBusinessUnit" type="int"/>
+    </transfer>
+
+    <transfer name="CompanyUserResponse">
+        <property name="companyUser" type="CompanyUser"/>
+        <property name="isSuccessful" type="bool"/>
+    </transfer>
+
+    <transfer name="CompanyUserCriteriaFilter">
+        <property name="idCompany" type="int"/>
+        <property name="filter" type="Filter"/>
+        <property name="isActive" type="bool"/>
+    </transfer>
+
+    <transfer name="Filter">
+        <property name="limit" type="int"/>
+        <property name="offset" type="int"/>
+        <property name="orderBy" type="string"/>
+        <property name="orderDirection" type="string"/>
+    </transfer>
+
+    <transfer name="CompanyUserCollection">
+        <property name="companyUsers" type="CompanyUser[]" singular="companyUser"/>
+    </transfer>
+
+    <transfer name="Company">
+        <property name="idCompany" type="int"/>
+        <property name="name" type="string"/>
+        <property name="status" type="string"/>
+    </transfer>
+
+    <transfer name="CompanyBusinessUnit">
+        <property name="name" type="string"/>
+        <property name="uuid" type="string"/>
+    </transfer>
+
+    <transfer name="PermissionCollection">
+        <property name="permissions" type="Permission[]" singular="permission"/>
+    </transfer>
+
+    <transfer name="Permission">
+        <property name="key" type="string"/>
+        <property name="configuration" type="array" singular="configuration"/>
+    </transfer>
+
+    <transfer name="RedisConfiguration">
+        <property name="dataSourceNames" type="array" singular="dataSourceNames"/>
+        <property name="connectionCredentials" type="RedisCredentials"/>
+        <property name="clientOptions" type="array" singular="clientOption" associative="true"/>
+    </transfer>
+
+    <transfer name="RedisCredentials">
+        <property name="scheme" type="string"/>
+        <property name="host" type="string"/>
+        <property name="port" type="string"/>
+        <property name="username" type="string"/>
+        <property name="database" type="int"/>
+        <property name="password" type="string"/>
+        <property name="isPersistent" type="bool"/>
+    </transfer>
+
+    <transfer name="SecurityBlockerConfigurationSettings">
+        <property name="numberOfAttempts" type="int"/>
+        <property name="ttl" type="int"/>
+        <property name="blockFor" type="int"/>
+    </transfer>
+
+    <transfer name="SecurityCheckAuthResponse">
+        <property name="isBlocked" type="bool"/>
+        <property name="securityCheckAuthContext" type="SecurityCheckAuthContext"/>
+        <property name="blockedFor" type="int"/>
+    </transfer>
+
+    <transfer name="SecurityCheckAuthContext">
+        <property name="type" type="string"/>
+        <property name="ip" type="string"/>
+        <property name="account" type="string"/>
+    </transfer>
+
+    <transfer name="AgenticCommerceToolResult" strict="true">
+        <property name="status" type="int"/>
+        <property name="ok" type="bool"/>
+        <property name="data" type="array" singular="dataItem" associative="true"/>
+        <property name="error" type="string"/>
+    </transfer>
+
+</transfers>

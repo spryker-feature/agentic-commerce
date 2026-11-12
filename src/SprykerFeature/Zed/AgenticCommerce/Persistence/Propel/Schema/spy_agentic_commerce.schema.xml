@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<database xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="zed" xsi:noNamespaceSchemaLocation="http://static.spryker.com/schema-01.xsd" namespace="Orm\Zed\AgenticCommerce\Persistence" package="src.Orm.Zed.AgenticCommerce.Persistence">
+    <table name="spy_agentic_commerce_client" identifierQuoting="true">
+        <column name="id_agentic_commerce_client" required="true" type="INTEGER" autoIncrement="true" primaryKey="true"/>
+        <column name="fk_oauth_client" type="VARCHAR" size="1024" required="true" description="Identifier of the OAuth client this third-party client is registered as."/>
+        <column name="registration_type" type="VARCHAR" size="32" required="true" defaultValue="pre_registered" description="How the client became known: pre_registered (console). client_id_metadata_document and dynamic are reserved."/>
+        <column name="client_uri" type="VARCHAR" size="2048" required="false" description="Home page of the client, shown on the consent page."/>
+        <column name="logo_uri" type="VARCHAR" size="2048" required="false" description="HTTPS logo of the client, shown on the consent page."/>
+        <column name="redirect_uris" type="LONGVARCHAR" required="true" description="JSON list of exact redirect URIs."/>
+        <column name="scope_ceiling" type="LONGVARCHAR" required="true" description="JSON list of the scopes the client may ever be granted."/>
+        <column name="trust_level" type="VARCHAR" size="32" required="true" defaultValue="verified" description="Trust signal shown on the consent page: verified."/>
+        <column name="status" type="VARCHAR" size="32" required="true" defaultValue="active" description="active or blocked."/>
+        <unique name="spy_agentic_commerce_client-unique-fk_oauth_client">
+            <unique-column name="fk_oauth_client"/>
+        </unique>
+        <foreign-key name="spy_agentic_commerce_client-fk_oauth_client" foreignTable="spy_oauth_client" phpName="OauthClient" refPhpName="AgenticCommerceClient">
+            <reference local="fk_oauth_client" foreign="identifier"/>
+        </foreign-key>
+        <behavior name="timestampable"/>
+
+        <id-method-parameter value="spy_agentic_commerce_client_pk_seq"/>
+    </table>
+
+    <table name="spy_agentic_commerce_consent" identifierQuoting="true">
+        <column name="id_agentic_commerce_consent" required="true" type="INTEGER" autoIncrement="true" primaryKey="true"/>
+        <column name="uuid" type="VARCHAR" size="36" required="false" description="Public identifier of the consent, carried in access and refresh tokens."/>
+        <column name="fk_agentic_commerce_client" type="INTEGER" required="true"/>
+        <column name="fk_customer" type="INTEGER" required="true" description="Customer who gave the consent. The foreign key cascades only on a hard delete; anonymization revokes through a plugin."/>
+        <column name="customer_reference" type="VARCHAR" size="255" required="true" description="Reference of the customer who gave the consent."/>
+        <column name="principal_type" type="VARCHAR" size="32" required="true" description="Who the client acts as: customer or company_user. Resolved by a principal resolver plugin."/>
+        <column name="principal_reference" type="VARCHAR" size="255" required="true" description="Reference of the principal: customer reference for customer, company user uuid for company_user. No foreign key, so the schema does not depend on any principal module."/>
+        <column name="fk_store" type="INTEGER" required="true" description="Store the consent is bound to."/>
+        <column name="granted_scopes" type="LONGVARCHAR" required="true" description="JSON list of granted scopes; narrowed when a refresh finds that a scope filter removed one (event scopes_narrowed)."/>
+        <column name="status" type="VARCHAR" size="32" required="true" defaultValue="active" description="active or revoked; expired is reserved for the housekeeping command."/>
+        <column name="expires_at" type="TIMESTAMP" required="true" description="End of the consent, chosen on the consent page."/>
+        <column name="last_used_at" type="TIMESTAMP" required="false" description="Last call made under the consent, written at most hourly."/>
+        <column name="revoked_at" type="TIMESTAMP" required="false"/>
+        <column name="revoked_by" type="VARCHAR" size="32" required="false" description="customer, client, company_admin, system_reuse_detected, system_code_replay, system_principal_inactive or system_client_blocked."/>
+        <column name="refresh_token_identifier" type="VARCHAR" size="128" required="false" description="Identifier of the one live refresh token issued under the consent, in the form consent uuid, a dot, then random hex."/>
+        <unique name="spy_agentic_commerce_consent-unique-uuid"><unique-column name="uuid"/></unique>
+        <unique name="spy_agentic_commerce_consent-unique-refresh_token"><unique-column name="refresh_token_identifier"/></unique>
+        <index name="spy_agentic_commerce_consent-index-fk_customer-status"><index-column name="fk_customer"/><index-column name="status"/></index>
+        <index name="spy_agentic_commerce_consent-index-principal-status"><index-column name="principal_type"/><index-column name="principal_reference"/><index-column name="status"/></index>
+        <index name="spy_agentic_commerce_consent-index-customer_reference"><index-column name="customer_reference"/></index>
+        <index name="spy_agentic_commerce_consent-index-fk_client-status"><index-column name="fk_agentic_commerce_client"/><index-column name="status"/></index>
+        <index name="spy_agentic_commerce_consent-index-fk_store"><index-column name="fk_store"/></index>
+        <foreign-key name="spy_agentic_commerce_consent-fk_agentic_commerce_client" foreignTable="spy_agentic_commerce_client" phpName="AgenticCommerceClient" refPhpName="AgenticCommerceConsent">
+            <reference local="fk_agentic_commerce_client" foreign="id_agentic_commerce_client"/>
+        </foreign-key>
+        <foreign-key name="spy_agentic_commerce_consent-fk_customer" foreignTable="spy_customer" phpName="Customer" refPhpName="AgenticCommerceConsent" onDelete="CASCADE">
+            <reference local="fk_customer" foreign="id_customer"/>
+        </foreign-key>
+        <foreign-key name="spy_agentic_commerce_consent-fk_store" foreignTable="spy_store" phpName="Store" refPhpName="AgenticCommerceConsent">
+            <reference local="fk_store" foreign="id_store"/>
+        </foreign-key>
+        <behavior name="uuid"><parameter name="key_columns" value="id_agentic_commerce_consent"/></behavior>
+        <behavior name="timestampable"/>
+
+        <id-method-parameter value="spy_agentic_commerce_consent_pk_seq"/>
+    </table>
+
+    <table name="spy_agentic_commerce_consent_event" identifierQuoting="true">
+        <column name="id_agentic_commerce_consent_event" required="true" type="BIGINT" autoIncrement="true" primaryKey="true"/>
+        <column name="fk_agentic_commerce_consent" type="INTEGER" required="true"/>
+        <column name="event" type="VARCHAR" size="32" required="true" description="granted, re_consented, scopes_narrowed, revoked, reuse_detected or code_replayed; expired is reserved for the housekeeping command."/>
+        <column name="actor" type="VARCHAR" size="32" required="true" description="Same values as spy_agentic_commerce_consent.revoked_by, plus system_scope_filter for scopes_narrowed; granted and re_consented always have customer."/>
+        <column name="scopes" type="LONGVARCHAR" required="true" description="JSON list of the consent scopes after the event."/>
+        <column name="client_name" type="VARCHAR" size="1024" required="false" description="Client name shown on the consent page; filled on granted and re_consented only."/>
+        <index name="spy_agentic_commerce_consent_event-index-fk_consent"><index-column name="fk_agentic_commerce_consent"/></index>
+        <foreign-key name="spy_agentic_commerce_consent_event-fk_consent" foreignTable="spy_agentic_commerce_consent" phpName="AgenticCommerceConsent" refPhpName="AgenticCommerceConsentEvent" onDelete="CASCADE">
+            <reference local="fk_agentic_commerce_consent" foreign="id_agentic_commerce_consent"/>
+        </foreign-key>
+        <behavior name="timestampable"><parameter name="disable_updated_at" value="true"/></behavior>
+
+        <id-method-parameter value="spy_agentic_commerce_consent_event_pk_seq"/>
+    </table>
+</database>

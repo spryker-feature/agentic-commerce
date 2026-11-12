@@ -1,0 +1,26 @@
+namespace: SprykerFeatureTest\Service\AgenticCommerce
+
+paths:
+    tests: .
+    data: ../../../_data
+    support: _support
+    output: ../../../_output
+
+coverage:
+    enabled: true
+    remote: false
+    whitelist: { include: ['../../../../src/*'] }
+
+suites:
+    Service:
+        path: AgenticCommerceService
+        actor: AgenticCommerceServiceTester
+        modules:
+            enabled:
+                - Asserts
+                - \SprykerTest\Shared\Testify\Helper\Environment
+                - \SprykerTest\Shared\Testify\Helper\LocatorHelper
+                - \SprykerTest\Shared\Testify\Helper\ConfigHelper
+                - \SprykerTest\Service\Testify\Helper\ServiceHelper
+                - \SprykerTest\Service\Testify\Helper\DependencyProviderHelper
+                - \SprykerFeatureTest\Service\AgenticCommerce\Helper\AgenticCommerceServiceHelper

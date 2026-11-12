@@ -1,0 +1,12 @@
+{
+    "include": {
+        "spryker-shop/shop-ui": "ShopUi provides the page layouts and molecules the templates extend.",
+        "spryker/money": "The Back Office order block and the Yves consent and Connected apps templates format the order limit with the Twig money filter, which no PHP class references.",
+        "spryker/permission": "The company role permission scope filter grants a scope only when a role holds its permission key, so the feature requires the permission module.",
+        "spryker/sales": "spy_agentic_commerce_sales_order references spy_sales_order by a foreign key, so the feature schema requires the sales module.",
+        "spryker/transfer": "Provides transfer objects definition with strict types."
+    },
+    "exclude": {
+        "spryker/merchant": "This is an optional dependency: only the merchant allowlist constraint plugins use it, and only a marketplace wires them."
+    }
+}

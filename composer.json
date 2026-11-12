@@ -1,0 +1,66 @@
+{
+    "name": "spryker-feature/agentic-commerce",
+    "type": "library",
+    "description": "AgenticCommerce module",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.3",
+        "spryker-shop/shop-ui": "^1.3.0 || ^2.0.0",
+        "spryker/application": "^3.0.0",
+        "spryker/customer": "^7.0.0",
+        "spryker/kernel": "^3.52.0",
+        "spryker/log": "^3.0.0",
+        "spryker/money": "^2.0.0",
+        "spryker/oauth": "^2.4.0",
+        "spryker/permission": "^1.0.0",
+        "spryker/permission-extension": "^1.0.0",
+        "spryker/propel-orm": "^1.0.0",
+        "spryker/sales": "^11.0.0",
+        "spryker/store": "^1.19.0",
+        "spryker/symfony": "^3.1.0",
+        "spryker/transfer": "^3.27.0",
+        "spryker/uuid-behavior": "^1.0.0"
+    },
+    "require-dev": {
+        "spryker/code-sniffer": "*",
+        "spryker/container": "*",
+        "spryker/propel": "*",
+        "spryker/testify": "*"
+    },
+    "suggest": {
+        "spryker-shop/company-page": "Required to render the company connected apps page in the company account layout and its entry in the company account navigation.",
+        "spryker/api-platform": "Required to expose the OAuth and principal Storefront API resources; without it the resources are never discovered.",
+        "spryker/event-dispatcher": "Use this module when using plugins that need EventDispatcher dependencies.",
+        "spryker/merchant": "Required by the merchant allowlist constraint plugins, which a marketplace wires to limit delegated orders to listed merchants.",
+        "spryker/router": "Use this module when using plugins that need Router dependencies."
+    },
+    "autoload": {
+        "psr-4": {
+            "SprykerFeature\\": "src/SprykerFeature/",
+            "SprykerFeatureTest\\Shared\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Shared/AgenticCommerce/_support/Helper/",
+            "SprykerFeatureTest\\Service\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Service/AgenticCommerce/_support/Helper/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SprykerFeatureTest\\": "tests/SprykerFeatureTest/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "cs-check": "phpcs -p -s --standard=vendor/spryker/code-sniffer/SprykerStrict/ruleset.xml src/ tests/",
+        "cs-fix": "phpcbf -p --standard=vendor/spryker/code-sniffer/SprykerStrict/ruleset.xml src/ tests/"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}
