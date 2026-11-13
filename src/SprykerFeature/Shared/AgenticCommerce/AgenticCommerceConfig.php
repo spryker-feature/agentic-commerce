@@ -307,6 +307,10 @@ class AgenticCommerceConfig extends AbstractSharedConfig
 
     public const string REQUEST_APPLICATION_AGENTIC_COMMERCE = 'AGENTIC_COMMERCE';
 
+    public const string REDIS_KEY_PREFIX = 'agentic_commerce';
+
+    public const string REDIS_KEY_SEPARATOR = ':';
+
     /**
      * @uses \Spryker\Zed\OauthCodeFlow\OauthCodeFlowConfig::GRANT_TYPE_AUTHORIZATION_CODE
      */
@@ -348,6 +352,8 @@ class AgenticCommerceConfig extends AbstractSharedConfig
      * An action scope is `<resource>:<action>`, each part lower-case words joined by hyphens.
      */
     public const string DELEGATED_SCOPE_PATTERN = '/^[a-z]+(-[a-z]+)*:[a-z]+(-[a-z]+)*$/';
+
+    public const string ROLE_AGENTIC_COMMERCE = 'ROLE_AGENTIC_COMMERCE';
 
     public const string ROLE_SCOPE_PREFIX = 'ROLE_SCOPE_';
 

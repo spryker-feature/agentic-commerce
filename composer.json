@@ -4,6 +4,8 @@
     "description": "AgenticCommerce module",
     "license": "proprietary",
     "require": {
+        "lcobucci/clock": "^2.0.0 || ^3.0.0",
+        "lcobucci/jwt": "^4.0.0",
         "php": ">=8.3",
         "spryker-shop/shop-ui": "^1.3.0 || ^2.0.0",
         "spryker/application": "^3.0.0",
@@ -12,18 +14,26 @@
         "spryker/log": "^3.0.0",
         "spryker/money": "^2.0.0",
         "spryker/oauth": "^2.4.0",
+        "spryker/oauth-extension": "^1.9.0",
         "spryker/permission": "^1.0.0",
         "spryker/permission-extension": "^1.0.0",
         "spryker/propel-orm": "^1.0.0",
+        "spryker/redis": "^2.13.0",
         "spryker/sales": "^11.0.0",
+        "spryker/security-blocker": "^1.3.0",
+        "spryker/security-blocker-extension": "^1.0.0",
         "spryker/store": "^1.19.0",
         "spryker/symfony": "^3.1.0",
         "spryker/transfer": "^3.27.0",
-        "spryker/uuid-behavior": "^1.0.0"
+        "spryker/uuid-behavior": "^1.0.0",
+        "spryker/zed-request": "^3.0.0",
+        "spryker/zed-request-extension": "^1.1.0"
     },
     "require-dev": {
         "spryker/code-sniffer": "*",
+        "spryker/config": "*",
         "spryker/container": "*",
+        "spryker/oauth-cryptography": "*",
         "spryker/propel": "*",
         "spryker/testify": "*"
     },
@@ -38,7 +48,8 @@
         "psr-4": {
             "SprykerFeature\\": "src/SprykerFeature/",
             "SprykerFeatureTest\\Shared\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Shared/AgenticCommerce/_support/Helper/",
-            "SprykerFeatureTest\\Service\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Service/AgenticCommerce/_support/Helper/"
+            "SprykerFeatureTest\\Service\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Service/AgenticCommerce/_support/Helper/",
+            "SprykerFeatureTest\\Client\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Client/AgenticCommerce/_support/Helper/"
         }
     },
     "autoload-dev": {
