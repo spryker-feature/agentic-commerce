@@ -17,7 +17,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
 use Spryker\Client\SecurityBlocker\Exception\SecurityBlockerException;
 use Spryker\Client\SecurityBlocker\SecurityBlockerClientInterface;
-use Spryker\Client\SecurityBlocker\Storage\KeyBuilder\SecurityBlockerStorageKeyBuilder;
+use Spryker\Client\SecurityBlocker\SecurityBlockerFactory;
 use SprykerFeature\Client\AgenticCommerce\AgenticCommerceConfig;
 use SprykerFeature\Client\AgenticCommerce\Plugin\SecurityBlocker\AgenticCommerceSecurityBlockerConfigurationSettingsExpanderPlugin;
 use SprykerFeature\Client\AgenticCommerce\SecurityBlocker\RateLimitChecker;
@@ -210,7 +210,7 @@ class RateLimitCheckerTest extends Unit
         $checker->checkRateLimit(SharedAgenticCommerceConfig::SECURITY_BLOCKER_TYPE_METADATA_FETCH, '', 'other.example');
 
         // Assert
-        $keyBuilder = new SecurityBlockerStorageKeyBuilder();
+        $keyBuilder = (new SecurityBlockerFactory())->createSecurityBlockerStorageKeyBuilder();
         $this->assertSame('agentic_commerce_metadata_fetch::app.example', $keyBuilder->getStorageKey($contexts[0]));
         $this->assertNotSame($keyBuilder->getStorageKey($contexts[0]), $keyBuilder->getStorageKey($contexts[1]));
     }
