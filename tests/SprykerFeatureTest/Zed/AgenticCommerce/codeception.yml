@@ -12,6 +12,30 @@ coverage:
     whitelist: { include: ['../../../../src/*'] }
 
 suites:
+    Persistence:
+        path: Persistence
+        actor: AgenticCommercePersistenceTester
+        modules:
+            enabled:
+                - Asserts
+                - \SprykerTest\Shared\Testify\Helper\Environment
+                - \SprykerTest\Shared\Testify\Helper\LocatorHelper
+                - \SprykerTest\Shared\Testify\Helper\DataCleanupHelper
+                - \SprykerTest\Shared\Propel\Helper\TransactionHelper
+                - \SprykerTest\Shared\Testify\Helper\ConfigHelper
+                - \SprykerTest\Shared\Testify\Helper\DependencyHelper
+                - \SprykerTest\Service\Container\Helper\ContainerHelper
+                - \SprykerTest\Zed\Store\Helper\StoreDependencyHelper
+                - \SprykerTest\Shared\Customer\Helper\CustomerDataHelper
+                - \SprykerTest\Shared\Store\Helper\StoreDataHelper
+                - \SprykerTest\Zed\Testify\Helper\Business\BusinessHelper
+                - \SprykerTest\Zed\Company\Helper\CompanyHelper
+                - \SprykerTest\Zed\CompanyBusinessUnit\Helper\CompanyBusinessUnitHelper
+                - \SprykerTest\Zed\CompanyRole\Helper\CompanyRoleHelper
+                - \SprykerTest\Zed\Permission\Helper\PermissionHelper
+                - \SprykerTest\Shared\CompanyUser\Helper\CompanyUserHelper
+                - \SprykerFeatureTest\Shared\AgenticCommerce\Helper\AgenticCommerceHelper
+
     Business:
         path: Business
         actor: AgenticCommerceBusinessTester
@@ -30,4 +54,18 @@ suites:
                 - \SprykerTest\Zed\Store\Helper\StoreDependencyHelper
                 - \SprykerTest\Shared\Customer\Helper\CustomerDataHelper
                 - \SprykerTest\Shared\Store\Helper\StoreDataHelper
+                - \SprykerTest\Zed\Merchant\Helper\MerchantHelper
+                - \SprykerTest\Shared\Product\Helper\ProductDataHelper
+                - \SprykerTest\Zed\Category\Helper\CategoryDataHelper
+                - \SprykerTest\Zed\ProductCategory\Helper\ProductCategoryDataHelper
+                - \SprykerTest\Zed\Company\Helper\CompanyHelper
+                - \SprykerTest\Zed\CompanyBusinessUnit\Helper\CompanyBusinessUnitHelper
+                - \SprykerTest\Zed\CompanyRole\Helper\CompanyRoleHelper
+                - \SprykerTest\Zed\Permission\Helper\PermissionHelper
+                - \SprykerTest\Shared\CompanyUser\Helper\CompanyUserHelper
                 - \SprykerFeatureTest\Shared\AgenticCommerce\Helper\AgenticCommerceHelper
+                - \SprykerFeatureTest\Zed\AgenticCommerce\Helper\AgenticCommerceRequestConsentHelper
+                - \SprykerTest\Zed\Oms\Helper\OmsHelper
+                - \SprykerTest\Shared\Sales\Helper\SalesDataHelper
+                - \SprykerFeatureTest\Zed\AgenticCommerce\Helper\AgenticCommerceConsentCacheHelper
+                - \SprykerTest\Shared\Quote\Helper\PersistentQuoteHelper

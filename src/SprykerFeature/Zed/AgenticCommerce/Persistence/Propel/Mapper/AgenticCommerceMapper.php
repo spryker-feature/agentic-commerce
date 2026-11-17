@@ -9,15 +9,22 @@ declare(strict_types = 1);
 
 namespace SprykerFeature\Zed\AgenticCommerce\Persistence\Propel\Mapper;
 
+use ArrayObject;
 use DateTime;
+use Generated\Shared\Transfer\AgenticCommerceCartHandoffTransfer;
 use Generated\Shared\Transfer\AgenticCommerceClientTransfer;
+use Generated\Shared\Transfer\AgenticCommerceConsentConstraintTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentEventTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentTransfer;
 use Generated\Shared\Transfer\AgenticCommercePrincipalTransfer;
+use Generated\Shared\Transfer\AgenticCommerceSalesOrderAttributionTransfer;
 use JsonException;
+use Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceCartHandoff;
 use Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceClient;
 use Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceConsent;
+use Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceConsentConstraint;
 use Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceConsentEvent;
+use Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceSalesOrder;
 use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig;
 use SprykerFeature\Zed\AgenticCommerce\Persistence\Exception\MalformedStoredListException;
 
@@ -39,7 +46,14 @@ class AgenticCommerceMapper
             ->setScopeCeiling($this->decodeList($agenticCommerceClientEntity->getScopeCeiling()))
             ->setRegistrationType($agenticCommerceClientEntity->getRegistrationType())
             ->setTrustLevel($agenticCommerceClientEntity->getTrustLevel())
-            ->setStatus($agenticCommerceClientEntity->getStatus());
+            ->setStatus($agenticCommerceClientEntity->getStatus())
+            ->setBlockedBy($agenticCommerceClientEntity->getBlockedBy())
+            ->setSoftwareId($agenticCommerceClientEntity->getSoftwareId())
+            ->setSoftwareVersion($agenticCommerceClientEntity->getSoftwareVersion())
+            ->setRegistrationMetadata($agenticCommerceClientEntity->getRegistrationMetadata())
+            ->setMetadataFetchedAt($agenticCommerceClientEntity->getMetadataFetchedAt(static::DATE_TIME_FORMAT))
+            ->setMetadataExpiresAt($agenticCommerceClientEntity->getMetadataExpiresAt(static::DATE_TIME_FORMAT))
+            ->setCreatedAt($agenticCommerceClientEntity->getCreatedAt(static::DATE_TIME_FORMAT));
     }
 
     public function mapAgenticCommerceClientTransferToAgenticCommerceClientEntity(
@@ -54,7 +68,12 @@ class AgenticCommerceMapper
             ->setScopeCeiling($this->encodeList($agenticCommerceClientTransfer->getScopeCeiling()))
             ->setRegistrationType($agenticCommerceClientTransfer->getRegistrationTypeOrFail())
             ->setTrustLevel($agenticCommerceClientTransfer->getTrustLevelOrFail())
-            ->setStatus($agenticCommerceClientTransfer->getStatusOrFail());
+            ->setStatus($agenticCommerceClientTransfer->getStatusOrFail())
+            ->setSoftwareId($agenticCommerceClientTransfer->getSoftwareId())
+            ->setSoftwareVersion($agenticCommerceClientTransfer->getSoftwareVersion())
+            ->setRegistrationMetadata($agenticCommerceClientTransfer->getRegistrationMetadata())
+            ->setMetadataFetchedAt($agenticCommerceClientTransfer->getMetadataFetchedAt())
+            ->setMetadataExpiresAt($agenticCommerceClientTransfer->getMetadataExpiresAt());
     }
 
     public function mapAgenticCommerceConsentEntityToAgenticCommerceConsentTransfer(
@@ -108,6 +127,38 @@ class AgenticCommerceMapper
             ->setExpiresAt($agenticCommerceConsentTransfer->getExpiresAtOrFail());
     }
 
+    public function mapAgenticCommerceCartHandoffTransferToAgenticCommerceCartHandoffEntity(
+        AgenticCommerceCartHandoffTransfer $agenticCommerceCartHandoffTransfer,
+        SpyAgenticCommerceCartHandoff $agenticCommerceCartHandoffEntity
+    ): SpyAgenticCommerceCartHandoff {
+        return $agenticCommerceCartHandoffEntity
+            ->setTokenHash($agenticCommerceCartHandoffTransfer->getTokenHashOrFail())
+            ->setFkAgenticCommerceConsent($agenticCommerceCartHandoffTransfer->getIdAgenticCommerceConsentOrFail())
+            ->setQuoteUuid($agenticCommerceCartHandoffTransfer->getQuoteUuidOrFail())
+            ->setPrincipalType($agenticCommerceCartHandoffTransfer->getPrincipalTypeOrFail())
+            ->setPrincipalReference($agenticCommerceCartHandoffTransfer->getPrincipalReferenceOrFail())
+            ->setFkStore($agenticCommerceCartHandoffTransfer->getIdStoreOrFail())
+            ->setExpiresAt($agenticCommerceCartHandoffTransfer->getExpiresAtOrFail());
+    }
+
+    public function mapAgenticCommerceCartHandoffEntityToAgenticCommerceCartHandoffTransfer(
+        SpyAgenticCommerceCartHandoff $agenticCommerceCartHandoffEntity,
+        AgenticCommerceCartHandoffTransfer $agenticCommerceCartHandoffTransfer
+    ): AgenticCommerceCartHandoffTransfer {
+        return $agenticCommerceCartHandoffTransfer
+            ->setIdAgenticCommerceCartHandoff($agenticCommerceCartHandoffEntity->getIdAgenticCommerceCartHandoff())
+            ->setTokenHash($agenticCommerceCartHandoffEntity->getTokenHash())
+            ->setIdAgenticCommerceConsent($agenticCommerceCartHandoffEntity->getFkAgenticCommerceConsent())
+            ->setConsentUuid($agenticCommerceCartHandoffEntity->getAgenticCommerceConsent()->getUuid())
+            ->setQuoteUuid($agenticCommerceCartHandoffEntity->getQuoteUuid())
+            ->setPrincipalType($agenticCommerceCartHandoffEntity->getPrincipalType())
+            ->setPrincipalReference($agenticCommerceCartHandoffEntity->getPrincipalReference())
+            ->setIdStore($agenticCommerceCartHandoffEntity->getFkStore())
+            ->setStoreName($agenticCommerceCartHandoffEntity->getStore()->getName())
+            ->setExpiresAt($agenticCommerceCartHandoffEntity->getExpiresAt(static::DATE_TIME_FORMAT))
+            ->setUsedAt($agenticCommerceCartHandoffEntity->getUsedAt(static::DATE_TIME_FORMAT));
+    }
+
     public function mapAgenticCommerceConsentEventTransferToAgenticCommerceConsentEventEntity(
         AgenticCommerceConsentEventTransfer $agenticCommerceConsentEventTransfer,
         SpyAgenticCommerceConsentEvent $agenticCommerceConsentEventEntity
@@ -117,7 +168,11 @@ class AgenticCommerceMapper
             ->setEvent($agenticCommerceConsentEventTransfer->getEventOrFail())
             ->setActor($agenticCommerceConsentEventTransfer->getActorOrFail())
             ->setScopes($this->encodeList($agenticCommerceConsentEventTransfer->getScopes()))
-            ->setClientName($agenticCommerceConsentEventTransfer->getClientName());
+            ->setClientName($agenticCommerceConsentEventTransfer->getClientName())
+            ->setActorReference($agenticCommerceConsentEventTransfer->getActorReference())
+            ->setIpAddress($agenticCommerceConsentEventTransfer->getIpAddress())
+            ->setUserAgent($agenticCommerceConsentEventTransfer->getUserAgent())
+            ->setConstraints($this->encodeConstraints($agenticCommerceConsentEventTransfer->getConstraints()));
     }
 
     public function mapAgenticCommerceConsentEventEntityToAgenticCommerceConsentEventTransfer(
@@ -131,7 +186,146 @@ class AgenticCommerceMapper
             ->setActor($agenticCommerceConsentEventEntity->getActor())
             ->setScopes($this->decodeList($agenticCommerceConsentEventEntity->getScopes()))
             ->setClientName($agenticCommerceConsentEventEntity->getClientName())
-            ->setCreatedAt($agenticCommerceConsentEventEntity->getCreatedAt(static::DATE_TIME_FORMAT));
+            ->setActorReference($agenticCommerceConsentEventEntity->getActorReference())
+            ->setIpAddress($agenticCommerceConsentEventEntity->getIpAddress())
+            ->setUserAgent($agenticCommerceConsentEventEntity->getUserAgent())
+            ->setCreatedAt($agenticCommerceConsentEventEntity->getCreatedAt(static::DATE_TIME_FORMAT))
+            ->setConstraints(new ArrayObject($this->decodeConstraints($agenticCommerceConsentEventEntity->getConstraints())));
+    }
+
+    public function mapAgenticCommerceSalesOrderEntityToAgenticCommerceSalesOrderAttributionTransfer(
+        SpyAgenticCommerceSalesOrder $agenticCommerceSalesOrderEntity,
+        AgenticCommerceSalesOrderAttributionTransfer $agenticCommerceSalesOrderAttributionTransfer
+    ): AgenticCommerceSalesOrderAttributionTransfer {
+        $idAgenticCommerceConsentEvent = $agenticCommerceSalesOrderEntity->getFkAgenticCommerceConsentEvent();
+
+        return $agenticCommerceSalesOrderAttributionTransfer
+            ->setIdSalesOrder($agenticCommerceSalesOrderEntity->getFkSalesOrder())
+            ->setConsentEvent(
+                $idAgenticCommerceConsentEvent === null
+                    ? null
+                    : (new AgenticCommerceConsentEventTransfer())->setIdAgenticCommerceConsentEvent((int)$idAgenticCommerceConsentEvent),
+            )
+            ->setCreatedAt($agenticCommerceSalesOrderEntity->getCreatedAt(static::DATE_TIME_FORMAT));
+    }
+
+    /**
+     * Adds what the event's consent is now: its status, the revocation time, the client and the customer.
+     */
+    public function expandAgenticCommerceConsentEventTransferWithConsent(
+        SpyAgenticCommerceConsent $agenticCommerceConsentEntity,
+        AgenticCommerceConsentEventTransfer $agenticCommerceConsentEventTransfer
+    ): AgenticCommerceConsentEventTransfer {
+        $agenticCommerceClientEntity = $agenticCommerceConsentEntity->getAgenticCommerceClient();
+
+        return $agenticCommerceConsentEventTransfer
+            ->setConsentUuid($agenticCommerceConsentEntity->getUuid())
+            ->setConsentStatus($this->resolveEffectiveStatus($agenticCommerceConsentEntity))
+            ->setConsentRevokedAt($agenticCommerceConsentEntity->getRevokedAt(static::DATE_TIME_FORMAT))
+            ->setClientIdentifier($agenticCommerceClientEntity->getFkOauthClient())
+            ->setClientUri($agenticCommerceClientEntity->getClientUri())
+            ->setIdCustomer($agenticCommerceConsentEntity->getFkCustomer());
+    }
+
+    public function mapAgenticCommerceConsentConstraintEntityToAgenticCommerceConsentConstraintTransfer(
+        SpyAgenticCommerceConsentConstraint $agenticCommerceConsentConstraintEntity,
+        AgenticCommerceConsentConstraintTransfer $agenticCommerceConsentConstraintTransfer
+    ): AgenticCommerceConsentConstraintTransfer {
+        return $agenticCommerceConsentConstraintTransfer
+            ->setType($agenticCommerceConsentConstraintEntity->getType())
+            ->setValue($this->decodeObject($agenticCommerceConsentConstraintEntity->getValue()));
+    }
+
+    public function mapAgenticCommerceConsentConstraintTransferToAgenticCommerceConsentConstraintEntity(
+        AgenticCommerceConsentConstraintTransfer $agenticCommerceConsentConstraintTransfer,
+        SpyAgenticCommerceConsentConstraint $agenticCommerceConsentConstraintEntity
+    ): SpyAgenticCommerceConsentConstraint {
+        return $agenticCommerceConsentConstraintEntity
+            ->setType($agenticCommerceConsentConstraintTransfer->getTypeOrFail())
+            ->setValue(json_encode($agenticCommerceConsentConstraintTransfer->getValue(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
+    }
+
+    /**
+     * @param \ArrayObject<int, \Generated\Shared\Transfer\AgenticCommerceConsentConstraintTransfer> $agenticCommerceConsentConstraintTransfers
+     */
+    protected function encodeConstraints(ArrayObject $agenticCommerceConsentConstraintTransfers): string
+    {
+        $constraints = [];
+
+        foreach ($agenticCommerceConsentConstraintTransfers as $agenticCommerceConsentConstraintTransfer) {
+            $constraints[] = [
+                AgenticCommerceConsentConstraintTransfer::TYPE => $agenticCommerceConsentConstraintTransfer->getTypeOrFail(),
+                AgenticCommerceConsentConstraintTransfer::VALUE => $agenticCommerceConsentConstraintTransfer->getValue(),
+            ];
+        }
+
+        return json_encode($constraints, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * Events other than the terms events carry no constraints.
+     *
+     * @throws \SprykerFeature\Zed\AgenticCommerce\Persistence\Exception\MalformedStoredListException
+     *
+     * @return list<\Generated\Shared\Transfer\AgenticCommerceConsentConstraintTransfer>
+     */
+    protected function decodeConstraints(?string $encodedConstraints): array
+    {
+        if ($encodedConstraints === null || $encodedConstraints === '') {
+            return [];
+        }
+
+        $decodedConstraints = $this->decodeJson($encodedConstraints);
+
+        if (!is_array($decodedConstraints) || !array_is_list($decodedConstraints)) {
+            throw new MalformedStoredListException('The stored constraints are no JSON list.');
+        }
+
+        $agenticCommerceConsentConstraintTransfers = [];
+
+        foreach ($decodedConstraints as $decodedConstraint) {
+            if (
+                !is_array($decodedConstraint)
+                || !is_string($decodedConstraint[AgenticCommerceConsentConstraintTransfer::TYPE] ?? null)
+                || !is_array($decodedConstraint[AgenticCommerceConsentConstraintTransfer::VALUE] ?? null)
+            ) {
+                throw new MalformedStoredListException('A stored constraint has no type or no value.');
+            }
+
+            $agenticCommerceConsentConstraintTransfers[] = (new AgenticCommerceConsentConstraintTransfer())
+                ->setType($decodedConstraint[AgenticCommerceConsentConstraintTransfer::TYPE])
+                ->setValue($decodedConstraint[AgenticCommerceConsentConstraintTransfer::VALUE]);
+        }
+
+        return $agenticCommerceConsentConstraintTransfers;
+    }
+
+    /**
+     * @throws \SprykerFeature\Zed\AgenticCommerce\Persistence\Exception\MalformedStoredListException
+     *
+     * @return array<string, mixed>
+     */
+    protected function decodeObject(string $encodedValue): array
+    {
+        $decodedValue = $this->decodeJson($encodedValue);
+
+        if (!is_array($decodedValue)) {
+            throw new MalformedStoredListException('The stored constraint value is no JSON object.');
+        }
+
+        return $decodedValue;
+    }
+
+    /**
+     * @throws \SprykerFeature\Zed\AgenticCommerce\Persistence\Exception\MalformedStoredListException
+     */
+    protected function decodeJson(string $encodedValue): mixed
+    {
+        try {
+            return json_decode($encodedValue, true, flags: JSON_THROW_ON_ERROR);
+        } catch (JsonException $jsonException) {
+            throw new MalformedStoredListException(sprintf('The stored value is no JSON: %s', $jsonException->getMessage()), previous: $jsonException);
+        }
     }
 
     /**

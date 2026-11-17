@@ -11,17 +11,34 @@ namespace SprykerFeature\Zed\AgenticCommerce\Persistence;
 
 use ArrayObject;
 use DateTime;
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
+use Generated\Shared\Transfer\AgenticCommerceCartHandoffTransfer;
+use Generated\Shared\Transfer\AgenticCommerceClientCollectionTransfer;
+use Generated\Shared\Transfer\AgenticCommerceClientConditionsTransfer;
+use Generated\Shared\Transfer\AgenticCommerceClientCriteriaTransfer;
 use Generated\Shared\Transfer\AgenticCommerceClientTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentCollectionTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentConditionsTransfer;
+use Generated\Shared\Transfer\AgenticCommerceConsentConstraintTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentCriteriaTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentEventTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentTransfer;
+use Generated\Shared\Transfer\AgenticCommerceSalesOrderAttributionTransfer;
 use Generated\Shared\Transfer\PaginationTransfer;
+use Orm\Zed\AgenticCommerce\Persistence\Map\SpyAgenticCommerceClientRedirectHostTableMap;
 use Orm\Zed\AgenticCommerce\Persistence\Map\SpyAgenticCommerceClientTableMap;
+use Orm\Zed\AgenticCommerce\Persistence\Map\SpyAgenticCommerceConsentEventTableMap;
 use Orm\Zed\AgenticCommerce\Persistence\Map\SpyAgenticCommerceConsentTableMap;
+use Orm\Zed\AgenticCommerce\Persistence\Map\SpyAgenticCommerceSalesOrderTableMap;
+use Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceClientQuery;
+use Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceConsentConstraintQuery;
+use Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceConsentEventQuery;
 use Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceConsentQuery;
 use Propel\Runtime\ActiveQuery\Criteria;
+use Propel\Runtime\ActiveQuery\ModelCriteria;
+use Propel\Runtime\Collection\ArrayCollection;
 use Spryker\Zed\Kernel\Persistence\AbstractRepository;
 use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig;
 
@@ -31,6 +48,13 @@ use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig;
 class AgenticCommerceRepository extends AbstractRepository implements AgenticCommerceRepositoryInterface
 {
     protected const string DATE_TIME_FORMAT = 'Y-m-d H:i:s';
+
+    /**
+     * The events that carry the client name; the Back Office block of an order falls back to the latest of them.
+     *
+     * @var list<string>
+     */
+    protected const array CLIENT_NAME_EVENTS = [AgenticCommerceConfig::CONSENT_EVENT_GRANTED, AgenticCommerceConfig::CONSENT_EVENT_RE_CONSENTED];
 
     /**
      * @var array<string, string>
@@ -63,6 +87,42 @@ class AgenticCommerceRepository extends AbstractRepository implements AgenticCom
 
     /**
      * @module Oauth
+     */
+    public function getAgenticCommerceClientCollection(
+        AgenticCommerceClientCriteriaTransfer $agenticCommerceClientCriteriaTransfer
+    ): AgenticCommerceClientCollectionTransfer {
+        $agenticCommerceClientQuery = $this->getFactory()
+            ->createAgenticCommerceClientQuery()
+            ->joinWithOauthClient()
+            ->orderByIdAgenticCommerceClient(Criteria::DESC);
+        $agenticCommerceClientConditionsTransfer = $agenticCommerceClientCriteriaTransfer->getAgenticCommerceClientConditions();
+
+        if ($agenticCommerceClientConditionsTransfer !== null) {
+            $agenticCommerceClientQuery = $this->applyClientConditions($agenticCommerceClientQuery, $agenticCommerceClientConditionsTransfer);
+        }
+
+        $agenticCommerceClientCollectionTransfer = new AgenticCommerceClientCollectionTransfer();
+        $paginationTransfer = $agenticCommerceClientCriteriaTransfer->getPagination();
+
+        if ($paginationTransfer !== null) {
+            /** @var \Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceClientQuery $agenticCommerceClientQuery */
+            $agenticCommerceClientQuery = $this->applyPagination($agenticCommerceClientQuery, $paginationTransfer);
+            $agenticCommerceClientCollectionTransfer->setPagination($paginationTransfer);
+        }
+
+        $agenticCommerceMapper = $this->getFactory()->createAgenticCommerceMapper();
+
+        foreach ($agenticCommerceClientQuery->find() as $agenticCommerceClientEntity) {
+            $agenticCommerceClientCollectionTransfer->addAgenticCommerceClient(
+                $agenticCommerceMapper->mapAgenticCommerceClientEntityToAgenticCommerceClientTransfer($agenticCommerceClientEntity, new AgenticCommerceClientTransfer()),
+            );
+        }
+
+        return $agenticCommerceClientCollectionTransfer;
+    }
+
+    /**
+     * @module Oauth
      * @module Store
      */
     public function getAgenticCommerceConsentCollection(
@@ -81,6 +141,7 @@ class AgenticCommerceRepository extends AbstractRepository implements AgenticCom
         $paginationTransfer = $agenticCommerceConsentCriteriaTransfer->getPagination();
 
         if ($paginationTransfer !== null) {
+            /** @var \Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceConsentQuery $agenticCommerceConsentQuery */
             $agenticCommerceConsentQuery = $this->applyPagination($agenticCommerceConsentQuery, $paginationTransfer);
             $agenticCommerceConsentCollectionTransfer->setPagination($paginationTransfer);
         }
@@ -94,6 +155,20 @@ class AgenticCommerceRepository extends AbstractRepository implements AgenticCom
         }
 
         return $agenticCommerceConsentCollectionTransfer;
+    }
+
+    public function countAgenticCommerceConsents(AgenticCommerceConsentCriteriaTransfer $agenticCommerceConsentCriteriaTransfer): int
+    {
+        $agenticCommerceConsentQuery = $this->getFactory()
+            ->createAgenticCommerceConsentQuery()
+            ->joinAgenticCommerceClient();
+        $agenticCommerceConsentConditionsTransfer = $agenticCommerceConsentCriteriaTransfer->getAgenticCommerceConsentConditions();
+
+        if ($agenticCommerceConsentConditionsTransfer !== null) {
+            $agenticCommerceConsentQuery = $this->applyConditions($agenticCommerceConsentQuery, $agenticCommerceConsentConditionsTransfer);
+        }
+
+        return $agenticCommerceConsentQuery->count();
     }
 
     /**
@@ -113,6 +188,27 @@ class AgenticCommerceRepository extends AbstractRepository implements AgenticCom
         return $this->getFactory()
             ->createAgenticCommerceMapper()
             ->mapAgenticCommerceConsentEntityToAgenticCommerceConsentTransfer($agenticCommerceConsentEntity, new AgenticCommerceConsentTransfer());
+    }
+
+    /**
+     * @module Store
+     */
+    public function findAgenticCommerceCartHandoffByTokenHash(string $tokenHash): ?AgenticCommerceCartHandoffTransfer
+    {
+        $agenticCommerceCartHandoffEntity = $this->getFactory()
+            ->createAgenticCommerceCartHandoffQuery()
+            ->joinWith('AgenticCommerceConsent')
+            ->joinWith('Store')
+            ->filterByTokenHash($tokenHash)
+            ->findOne();
+
+        if ($agenticCommerceCartHandoffEntity === null) {
+            return null;
+        }
+
+        return $this->getFactory()
+            ->createAgenticCommerceMapper()
+            ->mapAgenticCommerceCartHandoffEntityToAgenticCommerceCartHandoffTransfer($agenticCommerceCartHandoffEntity, new AgenticCommerceCartHandoffTransfer());
     }
 
     /**
@@ -146,6 +242,39 @@ class AgenticCommerceRepository extends AbstractRepository implements AgenticCom
             ->where(sprintf('%s = ?', SpyAgenticCommerceClientTableMap::COL_FK_OAUTH_CLIENT), $clientIdentifier);
 
         return $this->getActiveConsentUuids($agenticCommerceConsentQuery);
+    }
+
+    public function lockAgenticCommerceConsentLockByIdCustomer(int $idCustomer): bool
+    {
+        $agenticCommerceConsentLockEntity = $this->getFactory()
+            ->createAgenticCommerceConsentLockQuery()
+            ->filterByFkCustomer($idCustomer)
+            ->lockForUpdate()
+            ->findOne();
+
+        return $agenticCommerceConsentLockEntity !== null;
+    }
+
+    public function lockAgenticCommerceConsentByUuid(string $consentUuid): bool
+    {
+        $agenticCommerceConsentEntity = $this->getFactory()
+            ->createAgenticCommerceConsentQuery()
+            ->filterByUuid($consentUuid)
+            ->lockForUpdate()
+            ->findOne();
+
+        return $agenticCommerceConsentEntity !== null;
+    }
+
+    public function lockAgenticCommerceClientById(int $idAgenticCommerceClient): ?string
+    {
+        $agenticCommerceClientEntity = $this->getFactory()
+            ->createAgenticCommerceClientQuery()
+            ->filterByIdAgenticCommerceClient($idAgenticCommerceClient)
+            ->lockForUpdate()
+            ->findOne();
+
+        return $agenticCommerceClientEntity?->getFkOauthClient();
     }
 
     public function getActiveAgenticCommerceConsentUuidsByClient(string $clientIdentifier): array
@@ -192,6 +321,490 @@ class AgenticCommerceRepository extends AbstractRepository implements AgenticCom
         }
 
         return $agenticCommerceConsentEventTransfers;
+    }
+
+    /**
+     * @return list<\Generated\Shared\Transfer\AgenticCommerceConsentConstraintTransfer>
+     */
+    public function getAgenticCommerceConsentConstraintsByIdConsent(int $idAgenticCommerceConsent): array
+    {
+        return $this->mapConsentConstraints(
+            $this->getFactory()
+                ->createAgenticCommerceConsentConstraintQuery()
+                ->filterByFkAgenticCommerceConsent($idAgenticCommerceConsent),
+        );
+    }
+
+    /**
+     * @param list<int> $idAgenticCommerceConsents
+     *
+     * @return array<int, list<\Generated\Shared\Transfer\AgenticCommerceConsentConstraintTransfer>>
+     */
+    public function getAgenticCommerceConsentConstraintsGroupedByIdConsent(array $idAgenticCommerceConsents): array
+    {
+        if ($idAgenticCommerceConsents === []) {
+            return [];
+        }
+
+        $agenticCommerceConsentConstraintEntities = $this->getFactory()
+            ->createAgenticCommerceConsentConstraintQuery()
+            ->filterByFkAgenticCommerceConsent_In($idAgenticCommerceConsents)
+            ->orderByIdAgenticCommerceConsentConstraint(Criteria::ASC)
+            ->find();
+
+        $agenticCommerceMapper = $this->getFactory()->createAgenticCommerceMapper();
+        $agenticCommerceConsentConstraintTransfersByIdConsent = [];
+
+        foreach ($agenticCommerceConsentConstraintEntities as $agenticCommerceConsentConstraintEntity) {
+            $agenticCommerceConsentConstraintTransfersByIdConsent[$agenticCommerceConsentConstraintEntity->getFkAgenticCommerceConsent()][] = $agenticCommerceMapper
+                ->mapAgenticCommerceConsentConstraintEntityToAgenticCommerceConsentConstraintTransfer(
+                    $agenticCommerceConsentConstraintEntity,
+                    new AgenticCommerceConsentConstraintTransfer(),
+                );
+        }
+
+        return $agenticCommerceConsentConstraintTransfersByIdConsent;
+    }
+
+    /**
+     * @return list<\Generated\Shared\Transfer\AgenticCommerceConsentConstraintTransfer>
+     */
+    public function getAgenticCommerceConsentConstraintsByConsentUuid(string $consentUuid): array
+    {
+        return $this->mapConsentConstraints(
+            $this->getFactory()
+                ->createAgenticCommerceConsentConstraintQuery()
+                ->joinAgenticCommerceConsent()
+                ->where(sprintf('%s = ?', SpyAgenticCommerceConsentTableMap::COL_UUID), $consentUuid),
+        );
+    }
+
+    /**
+     * @param list<string> $events
+     */
+    public function findLatestAgenticCommerceConsentEvent(string $consentUuid, array $events): ?AgenticCommerceConsentEventTransfer
+    {
+        $agenticCommerceConsentEventEntity = $this->getFactory()
+            ->createAgenticCommerceConsentEventQuery()
+            ->filterByEvent_In($events)
+            ->joinAgenticCommerceConsent()
+            ->where(sprintf('%s = ?', SpyAgenticCommerceConsentTableMap::COL_UUID), $consentUuid)
+            ->orderByCreatedAt(Criteria::DESC)
+            ->orderByIdAgenticCommerceConsentEvent(Criteria::DESC)
+            ->findOne();
+
+        if ($agenticCommerceConsentEventEntity === null) {
+            return null;
+        }
+
+        return $this->getFactory()
+            ->createAgenticCommerceMapper()
+            ->mapAgenticCommerceConsentEventEntityToAgenticCommerceConsentEventTransfer($agenticCommerceConsentEventEntity, new AgenticCommerceConsentEventTransfer());
+    }
+
+    public function findAgenticCommerceConsentEventById(int $idAgenticCommerceConsentEvent): ?AgenticCommerceConsentEventTransfer
+    {
+        $agenticCommerceConsentEventEntity = $this->getFactory()
+            ->createAgenticCommerceConsentEventQuery()
+            ->joinWith('AgenticCommerceConsent')
+            ->joinWith('AgenticCommerceConsent.AgenticCommerceClient')
+            ->filterByIdAgenticCommerceConsentEvent($idAgenticCommerceConsentEvent)
+            ->findOne();
+
+        if ($agenticCommerceConsentEventEntity === null) {
+            return null;
+        }
+
+        $agenticCommerceMapper = $this->getFactory()->createAgenticCommerceMapper();
+
+        return $agenticCommerceMapper->expandAgenticCommerceConsentEventTransferWithConsent(
+            $agenticCommerceConsentEventEntity->getAgenticCommerceConsent(),
+            $agenticCommerceMapper->mapAgenticCommerceConsentEventEntityToAgenticCommerceConsentEventTransfer($agenticCommerceConsentEventEntity, new AgenticCommerceConsentEventTransfer()),
+        );
+    }
+
+    public function findAgenticCommerceSalesOrderAttribution(int $idSalesOrder): ?AgenticCommerceSalesOrderAttributionTransfer
+    {
+        $agenticCommerceSalesOrderEntity = $this->getFactory()
+            ->createAgenticCommerceSalesOrderQuery()
+            ->filterByFkSalesOrder($idSalesOrder)
+            ->findOne();
+
+        if ($agenticCommerceSalesOrderEntity === null) {
+            return null;
+        }
+
+        return $this->getFactory()
+            ->createAgenticCommerceMapper()
+            ->mapAgenticCommerceSalesOrderEntityToAgenticCommerceSalesOrderAttributionTransfer(
+                $agenticCommerceSalesOrderEntity,
+                new AgenticCommerceSalesOrderAttributionTransfer(),
+            );
+    }
+
+    /**
+     * @module Oauth
+     * @module Store
+     *
+     * @return list<\Generated\Shared\Transfer\AgenticCommerceConsentTransfer>
+     */
+    public function getAgenticCommerceConsentsPastExpiry(int $idAgenticCommerceConsentAfter, int $limit): array
+    {
+        $agenticCommerceConsentEntities = $this->createAgenticCommerceConsentQueryWithRelations()
+            ->filterByStatus(AgenticCommerceConfig::CONSENT_STATUS_ACTIVE)
+            ->filterByExpiresAt((new DateTime())->format(static::DATE_TIME_FORMAT), Criteria::LESS_THAN)
+            ->filterByIdAgenticCommerceConsent($idAgenticCommerceConsentAfter, Criteria::GREATER_THAN)
+            ->orderByIdAgenticCommerceConsent(Criteria::ASC)
+            ->limit($limit)
+            ->find();
+
+        $agenticCommerceMapper = $this->getFactory()->createAgenticCommerceMapper();
+        $agenticCommerceConsentTransfers = [];
+
+        foreach ($agenticCommerceConsentEntities as $agenticCommerceConsentEntity) {
+            $agenticCommerceConsentTransfers[] = $agenticCommerceMapper->mapAgenticCommerceConsentEntityToAgenticCommerceConsentTransfer(
+                $agenticCommerceConsentEntity,
+                new AgenticCommerceConsentTransfer(),
+            );
+        }
+
+        return $agenticCommerceConsentTransfers;
+    }
+
+    /**
+     * @param list<string> $registrationTypes
+     *
+     * @return list<int>
+     */
+    public function getAgenticCommerceClientIdsCreatedBefore(
+        array $registrationTypes,
+        DateTimeInterface $createdBefore,
+        int $idAgenticCommerceClientAfter,
+        int $limit
+    ): array {
+        return $this->findIds(
+            $this->getFactory()
+                ->createAgenticCommerceClientQuery()
+                ->filterByRegistrationType_In($registrationTypes)
+                ->filterByCreatedAt($this->formatDateTime($createdBefore), Criteria::LESS_THAN)
+                ->filterByIdAgenticCommerceClient($idAgenticCommerceClientAfter, Criteria::GREATER_THAN)
+                ->orderByIdAgenticCommerceClient(Criteria::ASC)
+                ->limit($limit),
+            SpyAgenticCommerceClientTableMap::COL_ID_AGENTIC_COMMERCE_CLIENT,
+        );
+    }
+
+    /**
+     * @param list<int> $idAgenticCommerceClients
+     *
+     * @return list<int>
+     */
+    public function getAgenticCommerceClientIdsWithConsent(array $idAgenticCommerceClients): array
+    {
+        if ($idAgenticCommerceClients === []) {
+            return [];
+        }
+
+        return $this->findIds(
+            $this->getFactory()
+                ->createAgenticCommerceConsentQuery()
+                ->filterByFkAgenticCommerceClient_In($idAgenticCommerceClients)
+                ->distinct(),
+            SpyAgenticCommerceConsentTableMap::COL_FK_AGENTIC_COMMERCE_CLIENT,
+        );
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function getAgenticCommerceConsentEventIdsCreatedBefore(DateTimeInterface $createdBefore, int $idAgenticCommerceConsentEventAfter, int $limit): array
+    {
+        return $this->findIds(
+            $this->getFactory()
+                ->createAgenticCommerceConsentEventQuery()
+                ->filterByCreatedAt($this->formatDateTime($createdBefore), Criteria::LESS_THAN)
+                ->filterByIdAgenticCommerceConsentEvent($idAgenticCommerceConsentEventAfter, Criteria::GREATER_THAN)
+                ->orderByIdAgenticCommerceConsentEvent(Criteria::ASC)
+                ->limit($limit),
+            SpyAgenticCommerceConsentEventTableMap::COL_ID_AGENTIC_COMMERCE_CONSENT_EVENT,
+        );
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function getAgenticCommerceConsentEventIdsWithClientDataCreatedBefore(
+        DateTimeInterface $createdBefore,
+        int $idAgenticCommerceConsentEventAfter,
+        int $limit
+    ): array {
+        return $this->findIds(
+            $this->getFactory()
+                ->createAgenticCommerceConsentEventQuery()
+                ->filterByCreatedAt($this->formatDateTime($createdBefore), Criteria::LESS_THAN)
+                ->filterByIdAgenticCommerceConsentEvent($idAgenticCommerceConsentEventAfter, Criteria::GREATER_THAN)
+                ->condition('hasIpAddress', SpyAgenticCommerceConsentEventTableMap::COL_IP_ADDRESS . ' IS NOT NULL')
+                ->condition('hasUserAgent', SpyAgenticCommerceConsentEventTableMap::COL_USER_AGENT . ' IS NOT NULL')
+                ->where(['hasIpAddress', 'hasUserAgent'], Criteria::LOGICAL_OR)
+                ->orderByIdAgenticCommerceConsentEvent(Criteria::ASC)
+                ->limit($limit),
+            SpyAgenticCommerceConsentEventTableMap::COL_ID_AGENTIC_COMMERCE_CONSENT_EVENT,
+        );
+    }
+
+    /**
+     * @param list<int> $idAgenticCommerceConsentEvents
+     *
+     * @return list<int>
+     */
+    public function getNewestAgenticCommerceConsentEventIds(array $idAgenticCommerceConsentEvents): array
+    {
+        if ($idAgenticCommerceConsentEvents === []) {
+            return [];
+        }
+
+        $idAgenticCommerceConsents = $this->findIds(
+            $this->getFactory()
+                ->createAgenticCommerceConsentEventQuery()
+                ->filterByIdAgenticCommerceConsentEvent_In($idAgenticCommerceConsentEvents)
+                ->distinct(),
+            SpyAgenticCommerceConsentEventTableMap::COL_FK_AGENTIC_COMMERCE_CONSENT,
+        );
+
+        $newestIdAgenticCommerceConsentEvents = array_values($this->getLatestConsentEventIdsByIdConsent(
+            $this->getFactory()
+                ->createAgenticCommerceConsentEventQuery()
+                ->filterByFkAgenticCommerceConsent_In($idAgenticCommerceConsents),
+        ));
+
+        return array_values(array_intersect($idAgenticCommerceConsentEvents, $newestIdAgenticCommerceConsentEvents));
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function getInactiveAgenticCommerceConsentIds(DateTimeInterface $updatedBefore, int $idAgenticCommerceConsentAfter, int $limit): array
+    {
+        return $this->findIds(
+            $this->getFactory()
+                ->createAgenticCommerceConsentQuery()
+                ->filterByStatus_In([AgenticCommerceConfig::CONSENT_STATUS_REVOKED, AgenticCommerceConfig::CONSENT_STATUS_EXPIRED])
+                ->filterByUpdatedAt($this->formatDateTime($updatedBefore), Criteria::LESS_THAN)
+                ->filterByIdAgenticCommerceConsent($idAgenticCommerceConsentAfter, Criteria::GREATER_THAN)
+                ->orderByIdAgenticCommerceConsent(Criteria::ASC)
+                ->limit($limit),
+            SpyAgenticCommerceConsentTableMap::COL_ID_AGENTIC_COMMERCE_CONSENT,
+        );
+    }
+
+    /**
+     * @param list<int> $idAgenticCommerceConsents
+     *
+     * @return array<int, list<int>>
+     */
+    public function getAgenticCommerceConsentEventIdsGroupedByIdConsent(array $idAgenticCommerceConsents): array
+    {
+        if ($idAgenticCommerceConsents === []) {
+            return [];
+        }
+
+        $consentEventRows = $this->getFactory()
+            ->createAgenticCommerceConsentEventQuery()
+            ->filterByFkAgenticCommerceConsent_In($idAgenticCommerceConsents)
+            ->select([
+                SpyAgenticCommerceConsentEventTableMap::COL_ID_AGENTIC_COMMERCE_CONSENT_EVENT,
+                SpyAgenticCommerceConsentEventTableMap::COL_FK_AGENTIC_COMMERCE_CONSENT,
+            ])
+            ->find();
+
+        $idAgenticCommerceConsentEventsByIdConsent = [];
+
+        foreach ($consentEventRows as $consentEventRow) {
+            $idAgenticCommerceConsentEventsByIdConsent[(int)$consentEventRow[SpyAgenticCommerceConsentEventTableMap::COL_FK_AGENTIC_COMMERCE_CONSENT]][]
+                = (int)$consentEventRow[SpyAgenticCommerceConsentEventTableMap::COL_ID_AGENTIC_COMMERCE_CONSENT_EVENT];
+        }
+
+        return $idAgenticCommerceConsentEventsByIdConsent;
+    }
+
+    /**
+     * @param list<int> $idAgenticCommerceConsents
+     *
+     * @return array<int, string>
+     */
+    public function getClientNamesAtConsentIndexedByIdConsent(array $idAgenticCommerceConsents): array
+    {
+        if ($idAgenticCommerceConsents === []) {
+            return [];
+        }
+
+        /** @var \Propel\Runtime\Collection\ArrayCollection $consentEventRows */
+        $consentEventRows = $this->getFactory()
+            ->createAgenticCommerceConsentEventQuery()
+            ->filterByFkAgenticCommerceConsent_In($idAgenticCommerceConsents)
+            ->filterByEvent_In(static::CLIENT_NAME_EVENTS)
+            ->filterByClientName(null, Criteria::ISNOTNULL)
+            ->orderByCreatedAt(Criteria::DESC)
+            ->orderByIdAgenticCommerceConsentEvent(Criteria::DESC)
+            ->select([
+                SpyAgenticCommerceConsentEventTableMap::COL_FK_AGENTIC_COMMERCE_CONSENT,
+                SpyAgenticCommerceConsentEventTableMap::COL_CLIENT_NAME,
+            ])
+            ->find();
+
+        return $this->getLatestClientNamesIndexedByIdConsent($consentEventRows);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function getLatestClientNamesIndexedByIdConsent(ArrayCollection $consentEventRows): array
+    {
+        $latestClientNamesByIdConsent = [];
+
+        foreach ($consentEventRows as $consentEventRow) {
+            $idAgenticCommerceConsent = (int)$consentEventRow[SpyAgenticCommerceConsentEventTableMap::COL_FK_AGENTIC_COMMERCE_CONSENT];
+            $latestClientNamesByIdConsent[$idAgenticCommerceConsent] ??= (string)$consentEventRow[SpyAgenticCommerceConsentEventTableMap::COL_CLIENT_NAME];
+        }
+
+        return $latestClientNamesByIdConsent;
+    }
+
+    /**
+     * @param list<int> $consentEventIds
+     *
+     * @return list<int>
+     */
+    public function getReferencedConsentEventIds(array $consentEventIds): array
+    {
+        if ($consentEventIds === []) {
+            return [];
+        }
+
+        $referencedConsentEventIds = $this->findIds(
+            $this->getFactory()
+                ->createAgenticCommerceSalesOrderQuery()
+                ->filterByFkAgenticCommerceConsentEvent_In($consentEventIds)
+                ->distinct(),
+            SpyAgenticCommerceSalesOrderTableMap::COL_FK_AGENTIC_COMMERCE_CONSENT_EVENT,
+        );
+
+        return array_values(array_unique(array_merge(
+            $referencedConsentEventIds,
+            $this->getClientNameFallbackConsentEventIds($consentEventIds),
+        )));
+    }
+
+    /**
+     * @param list<int> $consentEventIds
+     *
+     * @return list<int>
+     */
+    protected function getClientNameFallbackConsentEventIds(array $consentEventIds): array
+    {
+        $idAgenticCommerceConsentsOfCandidates = $this->findIds(
+            $this->getFactory()
+                ->createAgenticCommerceConsentEventQuery()
+                ->filterByIdAgenticCommerceConsentEvent_In($consentEventIds)
+                ->filterByEvent_In(static::CLIENT_NAME_EVENTS)
+                ->distinct(),
+            SpyAgenticCommerceConsentEventTableMap::COL_FK_AGENTIC_COMMERCE_CONSENT,
+        );
+
+        if ($idAgenticCommerceConsentsOfCandidates === []) {
+            return [];
+        }
+
+        $idAgenticCommerceConsentsWithReferencedEventWithoutClientName = $this->findIds(
+            $this->getFactory()
+                ->createAgenticCommerceConsentEventQuery()
+                ->filterByFkAgenticCommerceConsent_In($idAgenticCommerceConsentsOfCandidates)
+                ->filterByClientName(null, Criteria::ISNULL)
+                ->joinAgenticCommerceSalesOrder(null, Criteria::INNER_JOIN)
+                ->distinct(),
+            SpyAgenticCommerceConsentEventTableMap::COL_FK_AGENTIC_COMMERCE_CONSENT,
+        );
+
+        if ($idAgenticCommerceConsentsWithReferencedEventWithoutClientName === []) {
+            return [];
+        }
+
+        $fallbackConsentEventIds = $this->getLatestConsentEventIdsByIdConsent(
+            $this->getFactory()
+                ->createAgenticCommerceConsentEventQuery()
+                ->filterByFkAgenticCommerceConsent_In($idAgenticCommerceConsentsWithReferencedEventWithoutClientName)
+                ->filterByEvent_In(static::CLIENT_NAME_EVENTS),
+        );
+
+        return array_values(array_intersect($consentEventIds, $fallbackConsentEventIds));
+    }
+
+    /**
+     * Selects the id column on the query and returns its values as integers; Propel returns a `BIGINT` as a string.
+     *
+     * @return list<int>
+     */
+    protected function findIds(ModelCriteria $modelCriteria, string $idColumn): array
+    {
+        /** @var \Propel\Runtime\Collection\ArrayCollection<int, int|string> $ids */
+        $ids = $modelCriteria->select($idColumn)->find();
+
+        return array_map('intval', array_values($ids->toArray()));
+    }
+
+    protected function formatDateTime(DateTimeInterface $dateTime): string
+    {
+        return DateTimeImmutable::createFromInterface($dateTime)
+            ->setTimezone(new DateTimeZone(date_default_timezone_get()))
+            ->format(static::DATE_TIME_FORMAT);
+    }
+
+    /**
+     * Returns the id of the latest event of every consent the query matches, ordered as `findLatestAgenticCommerceConsentEvent()` orders: `created_at`, then id, both descending.
+     *
+     * @return array<int, int>
+     */
+    protected function getLatestConsentEventIdsByIdConsent(SpyAgenticCommerceConsentEventQuery $agenticCommerceConsentEventQuery): array
+    {
+        $consentEventRows = $agenticCommerceConsentEventQuery
+            ->orderByCreatedAt(Criteria::DESC)
+            ->orderByIdAgenticCommerceConsentEvent(Criteria::DESC)
+            ->select([
+                SpyAgenticCommerceConsentEventTableMap::COL_ID_AGENTIC_COMMERCE_CONSENT_EVENT,
+                SpyAgenticCommerceConsentEventTableMap::COL_FK_AGENTIC_COMMERCE_CONSENT,
+            ])
+            ->find();
+
+        $latestIdAgenticCommerceConsentEventsByIdConsent = [];
+
+        foreach ($consentEventRows as $consentEventRow) {
+            $idAgenticCommerceConsent = (int)$consentEventRow[SpyAgenticCommerceConsentEventTableMap::COL_FK_AGENTIC_COMMERCE_CONSENT];
+            $latestIdAgenticCommerceConsentEventsByIdConsent[$idAgenticCommerceConsent] ??= (int)$consentEventRow[SpyAgenticCommerceConsentEventTableMap::COL_ID_AGENTIC_COMMERCE_CONSENT_EVENT];
+        }
+
+        return $latestIdAgenticCommerceConsentEventsByIdConsent;
+    }
+
+    /**
+     * @return list<\Generated\Shared\Transfer\AgenticCommerceConsentConstraintTransfer>
+     */
+    protected function mapConsentConstraints(SpyAgenticCommerceConsentConstraintQuery $agenticCommerceConsentConstraintQuery): array
+    {
+        $agenticCommerceConsentConstraintEntities = $agenticCommerceConsentConstraintQuery
+            ->orderByIdAgenticCommerceConsentConstraint(Criteria::ASC)
+            ->find();
+
+        $agenticCommerceMapper = $this->getFactory()->createAgenticCommerceMapper();
+        $agenticCommerceConsentConstraintTransfers = [];
+
+        foreach ($agenticCommerceConsentConstraintEntities as $agenticCommerceConsentConstraintEntity) {
+            $agenticCommerceConsentConstraintTransfers[] = $agenticCommerceMapper->mapAgenticCommerceConsentConstraintEntityToAgenticCommerceConsentConstraintTransfer(
+                $agenticCommerceConsentConstraintEntity,
+                new AgenticCommerceConsentConstraintTransfer(),
+            );
+        }
+
+        return $agenticCommerceConsentConstraintTransfers;
     }
 
     /**
@@ -304,6 +917,67 @@ class AgenticCommerceRepository extends AbstractRepository implements AgenticCom
         return $agenticCommerceConsentQuery->where($conditionNames, Criteria::LOGICAL_OR);
     }
 
+    protected function applyClientConditions(
+        SpyAgenticCommerceClientQuery $agenticCommerceClientQuery,
+        AgenticCommerceClientConditionsTransfer $agenticCommerceClientConditionsTransfer
+    ): SpyAgenticCommerceClientQuery {
+        if ($agenticCommerceClientConditionsTransfer->getClientIdentifiers() !== []) {
+            $agenticCommerceClientQuery->filterByFkOauthClient_In($agenticCommerceClientConditionsTransfer->getClientIdentifiers());
+        }
+
+        if ($agenticCommerceClientConditionsTransfer->getStatuses() !== []) {
+            $agenticCommerceClientQuery->filterByStatus_In($agenticCommerceClientConditionsTransfer->getStatuses());
+        }
+
+        if ($agenticCommerceClientConditionsTransfer->getRegistrationTypes() !== []) {
+            $agenticCommerceClientQuery->filterByRegistrationType_In($agenticCommerceClientConditionsTransfer->getRegistrationTypes());
+        }
+
+        if ($agenticCommerceClientConditionsTransfer->getSoftwareIds() !== []) {
+            $agenticCommerceClientQuery->filterBySoftwareId_In($agenticCommerceClientConditionsTransfer->getSoftwareIds());
+        }
+
+        if ($agenticCommerceClientConditionsTransfer->getBlockedByValues() !== []) {
+            $agenticCommerceClientQuery->filterByBlockedBy_In($agenticCommerceClientConditionsTransfer->getBlockedByValues());
+        }
+
+        if ($agenticCommerceClientConditionsTransfer->getRedirectHosts() !== []) {
+            $agenticCommerceClientQuery->filterByIdAgenticCommerceClient_In(
+                $this->getIdAgenticCommerceClientsByRedirectHosts(array_values($agenticCommerceClientConditionsTransfer->getRedirectHosts())),
+            );
+        }
+
+        return $agenticCommerceClientQuery;
+    }
+
+    /**
+     * Matches the normalized selectors (see `AgenticCommerceServiceInterface::findNormalizedHost()`) against the normalized
+     * redirect hosts stored with each client, because a stored URI keeps the spelling it was registered with: upper case,
+     * a trailing dot, percent-encoding or Unicode. A selector that is not a valid host matches nothing.
+     *
+     * @param list<string> $redirectHosts
+     *
+     * @return list<int>
+     */
+    protected function getIdAgenticCommerceClientsByRedirectHosts(array $redirectHosts): array
+    {
+        $redirectHosts = $this->getFactory()->getAgenticCommerceService()->normalizeHosts($redirectHosts);
+
+        if ($redirectHosts === []) {
+            return [];
+        }
+
+        $idAgenticCommerceClients = $this->getFactory()
+            ->createAgenticCommerceClientRedirectHostQuery()
+            ->filterByHost_In($redirectHosts)
+            ->select([SpyAgenticCommerceClientRedirectHostTableMap::COL_FK_AGENTIC_COMMERCE_CLIENT])
+            ->distinct()
+            ->find()
+            ->getData();
+
+        return array_values(array_map('intval', $idAgenticCommerceClients));
+    }
+
     /**
      * @param \ArrayObject<int, \Generated\Shared\Transfer\SortTransfer> $sortTransfers
      */
@@ -332,19 +1006,19 @@ class AgenticCommerceRepository extends AbstractRepository implements AgenticCom
     }
 
     protected function applyPagination(
-        SpyAgenticCommerceConsentQuery $agenticCommerceConsentQuery,
+        ModelCriteria $modelCriteria,
         PaginationTransfer $paginationTransfer
-    ): SpyAgenticCommerceConsentQuery {
+    ): ModelCriteria {
         if ($paginationTransfer->getOffset() !== null && $paginationTransfer->getLimit() !== null) {
-            $paginationTransfer->setNbResults($agenticCommerceConsentQuery->count());
+            $paginationTransfer->setNbResults($modelCriteria->count());
 
-            return $agenticCommerceConsentQuery
+            return $modelCriteria
                 ->offset($paginationTransfer->getOffsetOrFail())
                 ->setLimit($paginationTransfer->getLimitOrFail());
         }
 
         if ($paginationTransfer->getPage() !== null && $paginationTransfer->getMaxPerPage() !== null) {
-            $propelModelPager = $agenticCommerceConsentQuery->paginate(
+            $propelModelPager = $modelCriteria->paginate(
                 $paginationTransfer->getPageOrFail(),
                 $paginationTransfer->getMaxPerPageOrFail(),
             );
@@ -357,12 +1031,62 @@ class AgenticCommerceRepository extends AbstractRepository implements AgenticCom
                 ->setNextPage($propelModelPager->getNextPage())
                 ->setPreviousPage($propelModelPager->getPreviousPage());
 
-            /** @var \Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceConsentQuery $paginatedQuery */
-            $paginatedQuery = $propelModelPager->getQuery();
-
-            return $paginatedQuery;
+            return $propelModelPager->getQuery();
         }
 
-        return $agenticCommerceConsentQuery;
+        return $modelCriteria;
+    }
+
+    /**
+     * Propel writes `created_at` in the PHP default timezone, so the period start is compared in that timezone.
+     *
+     * @module Sales
+     * @module Oms
+     *
+     * @param list<string> $canceledOmsStateNames
+     *
+     * @return array<int, int>
+     */
+    public function getAgenticCommerceAttributedGrandTotalsIndexedByIdSalesOrder(
+        int $idAgenticCommerceConsent,
+        DateTimeImmutable $placedSince,
+        array $canceledOmsStateNames
+    ): array {
+        $agenticCommerceSalesOrderQuery = $this->getFactory()->createAgenticCommerceSalesOrderQuery();
+        $agenticCommerceSalesOrderQuery
+            ->useAgenticCommerceConsentEventQuery(null, Criteria::INNER_JOIN)
+                ->filterByFkAgenticCommerceConsent($idAgenticCommerceConsent)
+            ->endUse();
+        /** @var list<int> $idSalesOrders */
+        $idSalesOrders = $agenticCommerceSalesOrderQuery
+            ->useSpySalesOrderQuery()
+                ->filterByCreatedAt($placedSince->setTimezone(new DateTimeZone(date_default_timezone_get()))->format(static::DATE_TIME_FORMAT), Criteria::GREATER_EQUAL)
+                ->useItemQuery()
+                    ->useStateQuery()
+                        ->filterByName($canceledOmsStateNames, Criteria::NOT_IN)
+                    ->endUse()
+                ->endUse()
+            ->endUse()
+            ->select([SpyAgenticCommerceSalesOrderTableMap::COL_FK_SALES_ORDER])
+            ->distinct()
+            ->find()
+            ->getData();
+
+        if ($idSalesOrders === []) {
+            return [];
+        }
+
+        $grandTotalsByIdSalesOrder = [];
+        $salesOrderTotalsEntities = $this->getFactory()
+            ->createSalesOrderTotalsQuery()
+            ->filterByFkSalesOrder_In($idSalesOrders)
+            ->orderByIdSalesOrderTotals(Criteria::ASC)
+            ->find();
+
+        foreach ($salesOrderTotalsEntities as $salesOrderTotalsEntity) {
+            $grandTotalsByIdSalesOrder[$salesOrderTotalsEntity->getFkSalesOrder()] = (int)$salesOrderTotalsEntity->getGrandTotal();
+        }
+
+        return $grandTotalsByIdSalesOrder;
     }
 }

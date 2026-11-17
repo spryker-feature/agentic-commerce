@@ -19,6 +19,7 @@ interface AgenticCommerceConsentPostRevokePluginInterface
     /**
      * Specification:
      * - Is executed once per revocation, with every consent it revoked, after the revocation's own transaction completes.
+     * - Is executed the same way once per housekeeping batch, with every consent that batch moved to `expired`.
      * - When the revocation was called inside a transaction its caller holds, it is executed before that caller commits, so the revoked state may still roll back.
      * - An exception it throws is not caught: it reaches the caller of the revocation, and the plugins after it in the stack are not executed.
      *

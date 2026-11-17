@@ -237,6 +237,16 @@ interface AgenticCommerceConstants
 
     /**
      * Specification:
+     * - Exact redirect URI hosts that Dynamic Client Registration (DCR) accepts in allowlist mode.
+     * - An empty list accepts no host in allowlist mode.
+     * - Defaults to an empty list.
+     *
+     * @api
+     */
+    public const string DYNAMIC_CLIENT_REGISTRATION_REDIRECT_HOST_ALLOWLIST = 'AGENTIC_COMMERCE:DYNAMIC_CLIENT_REGISTRATION_REDIRECT_HOST_ALLOWLIST';
+
+    /**
+     * Specification:
      * - Exact `software_id` values whose registrations are refused even when no client of that family exists yet.
      * - Defaults to an empty list.
      *
