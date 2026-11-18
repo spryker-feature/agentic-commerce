@@ -96,7 +96,22 @@ class UpdateAgenticCommerceConsentCollectionTest extends Unit
         $this->assertSame([AgenticCommerceHelper::SCOPE], $eventTransfers[0]->getScopes());
     }
 
-    public function testGivenAPostRevokePluginWhenACustomerRevokesAConsentThenThePluginReceivesACollectionWithTheRevokedConsentOnce(): void
+    public function testGivenAnActiveConsentWhenItsCustomerRevokesItThenTheEventStoresNoActorReference(): void
+    {
+        // Arrange
+        $customerTransfer = $this->tester->haveAgenticCommerceCustomer();
+        $consentTransfer = $this->tester->haveAgenticCommerceConsentForCustomer($customerTransfer);
+
+        // Act
+        $this->tester->getFacade()->updateAgenticCommerceConsentCollection(
+            $this->createRequest([$this->createRevocation($consentTransfer, $customerTransfer)], true),
+        );
+
+        // Assert
+        $this->assertNull($this->tester->getConsentEvents($consentTransfer->getUuidOrFail())[0]->getActorReference());
+    }
+
+    public function testGivenAPostRevokePluginWhenACustomerRevokesAConsentThenThePluginReceivesTheConsentOnce(): void
     {
         // Arrange
         $customerTransfer = $this->tester->haveAgenticCommerceCustomer();

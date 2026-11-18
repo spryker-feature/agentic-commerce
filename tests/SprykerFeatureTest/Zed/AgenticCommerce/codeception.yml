@@ -68,4 +68,6 @@ suites:
                 - \SprykerTest\Zed\Oms\Helper\OmsHelper
                 - \SprykerTest\Shared\Sales\Helper\SalesDataHelper
                 - \SprykerFeatureTest\Zed\AgenticCommerce\Helper\AgenticCommerceConsentCacheHelper
+                - \SprykerFeatureTest\Zed\AgenticCommerce\Helper\AgenticCommerceHousekeepingHelper
                 - \SprykerTest\Shared\Quote\Helper\PersistentQuoteHelper
+                - \SprykerFeatureTest\Zed\AgenticCommerce\Helper\AgenticCommerceCartHandoffHelper
