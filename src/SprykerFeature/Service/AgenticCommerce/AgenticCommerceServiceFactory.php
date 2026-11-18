@@ -19,6 +19,8 @@ use SprykerFeature\Service\AgenticCommerce\Resource\ProtectedResourceDeclaration
 use SprykerFeature\Service\AgenticCommerce\Resource\ProtectedResourceDeclarationBuilderInterface;
 use SprykerFeature\Service\AgenticCommerce\Resource\ProtectedResourceReader;
 use SprykerFeature\Service\AgenticCommerce\Resource\ProtectedResourceReaderInterface;
+use SprykerFeature\Service\AgenticCommerce\Resource\ProtectedResourceValidator;
+use SprykerFeature\Service\AgenticCommerce\Resource\ProtectedResourceValidatorInterface;
 use SprykerFeature\Service\AgenticCommerce\Scope\McpToolScopeReader;
 use SprykerFeature\Service\AgenticCommerce\Scope\McpToolScopeReaderInterface;
 use SprykerFeature\Service\AgenticCommerce\Scope\ScopeRoleMapper;
@@ -51,10 +53,14 @@ class AgenticCommerceServiceFactory extends AbstractServiceFactory
     {
         return new ProtectedResourceReader(
             $this->getProtectedResourceProviderPlugins(),
-            $this->createScopeRoleMapper(),
-            $this->createHostNormalizer(),
+            $this->createProtectedResourceValidator(),
             $this->getLogger(),
         );
+    }
+
+    public function createProtectedResourceValidator(): ProtectedResourceValidatorInterface
+    {
+        return new ProtectedResourceValidator($this->createScopeRoleMapper(), $this->createHostNormalizer());
     }
 
     public function createProtectedResourceDeclarationBuilder(): ProtectedResourceDeclarationBuilderInterface

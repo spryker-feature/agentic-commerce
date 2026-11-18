@@ -28,6 +28,9 @@ use Orm\Zed\AgenticCommerce\Persistence\SpyAgenticCommerceSalesOrder;
 use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig;
 use SprykerFeature\Zed\AgenticCommerce\Persistence\Exception\MalformedStoredListException;
 
+/**
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)
+ */
 class AgenticCommerceMapper
 {
     protected const string DATE_TIME_FORMAT = 'Y-m-d H:i:s';

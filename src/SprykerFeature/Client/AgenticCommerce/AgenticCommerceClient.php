@@ -51,6 +51,9 @@ use Spryker\Client\Kernel\AbstractClient;
 
 /**
  * @method \SprykerFeature\Client\AgenticCommerce\AgenticCommerceFactory getFactory()
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
 class AgenticCommerceClient extends AbstractClient implements AgenticCommerceClientInterface
 {

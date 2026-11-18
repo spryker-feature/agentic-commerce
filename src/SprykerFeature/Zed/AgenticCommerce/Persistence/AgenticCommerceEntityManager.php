@@ -36,6 +36,8 @@ use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig;
 
 /**
  * @method \SprykerFeature\Zed\AgenticCommerce\Persistence\AgenticCommercePersistenceFactory getFactory()
+ *
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
 class AgenticCommerceEntityManager extends AbstractEntityManager implements AgenticCommerceEntityManagerInterface
 {

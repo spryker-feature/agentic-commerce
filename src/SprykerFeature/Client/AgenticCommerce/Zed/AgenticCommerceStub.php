@@ -43,6 +43,10 @@ use Generated\Shared\Transfer\AgenticCommerceScopeCriteriaTransfer;
 use Generated\Shared\Transfer\CustomerTransfer;
 use Spryker\Client\ZedRequest\ZedRequestClientInterface;
 
+/**
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)
+ */
 class AgenticCommerceStub implements AgenticCommerceStubInterface
 {
     public function __construct(protected ZedRequestClientInterface $zedRequestClient)

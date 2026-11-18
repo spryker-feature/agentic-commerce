@@ -17,6 +17,8 @@ use SprykerFeature\Shared\AgenticCommerce\Exception\AgenticCommerceConfiguration
 
 /**
  * @method \SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig getSharedConfig()
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class AgenticCommerceConfig extends AbstractBundleConfig
 {

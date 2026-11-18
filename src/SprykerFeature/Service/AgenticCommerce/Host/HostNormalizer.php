@@ -58,12 +58,12 @@ class HostNormalizer implements HostNormalizerInterface
         // The trailing dot is removed after the conversion, which maps a Unicode full stop such as `。` to `.`.
         $host = $this->removeTrailingDot($this->convertToAscii($host));
 
-        if ($host === null || $host === '' || str_ends_with($host, static::HOST_ROOT_LABEL_SUFFIX) || filter_var($host, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME) === false) {
+        if ($host === null || !$this->isValidHostname($host)) {
             return null;
         }
 
         // Only the dotted-decimal spelling of an IPv4 address is accepted, so `127.1`, `2130706433` and `0x7f.0.0.1` never pass for another host than `127.0.0.1`.
-        if (preg_match(static::PATTERN_NUMERIC_LAST_LABEL, $host) === 1 && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === false) {
+        if ($this->isNonCanonicalIpv4Spelling($host)) {
             return null;
         }
 
@@ -81,6 +81,19 @@ class HostNormalizer implements HostNormalizerInterface
             array_map($this->findNormalizedHost(...), $hosts),
             static fn (?string $host): bool => $host !== null,
         ));
+    }
+
+    protected function isValidHostname(string $host): bool
+    {
+        return $host !== ''
+            && !str_ends_with($host, static::HOST_ROOT_LABEL_SUFFIX)
+            && filter_var($host, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME) !== false;
+    }
+
+    protected function isNonCanonicalIpv4Spelling(string $host): bool
+    {
+        return preg_match(static::PATTERN_NUMERIC_LAST_LABEL, $host) === 1
+            && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === false;
     }
 
     protected function removeTrailingDot(?string $host): ?string

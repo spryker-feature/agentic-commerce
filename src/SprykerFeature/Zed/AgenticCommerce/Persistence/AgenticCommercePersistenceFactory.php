@@ -75,6 +75,11 @@ class AgenticCommercePersistenceFactory extends AbstractPersistenceFactory
         return SpyAgenticCommerceCartHandoffQuery::create();
     }
 
+    public function createAgenticCommerceRetentionReader(): AgenticCommerceRetentionReaderInterface
+    {
+        return new AgenticCommerceRetentionReader($this);
+    }
+
     public function createAgenticCommerceMapper(): AgenticCommerceMapper
     {
         return new AgenticCommerceMapper();

@@ -192,6 +192,34 @@ class ReadProtectedResourcesFailClosedTest extends Unit
                 ['name' => 'mcp', 'pathPrefix' => '/mcp', 'resourceUri' => 'https://glue.example/mcp', 'scopes' => []],
                 ['name' => 'tools', 'pathPrefix' => '/mcp', 'resourceUri' => 'https://tools.example/mcp', 'scopes' => []],
             ]],
+            'duplicate resource URI' => [[
+                ['name' => 'mcp', 'pathPrefix' => '/mcp', 'resourceUri' => 'https://glue.example/mcp', 'scopes' => []],
+                ['name' => 'tools', 'pathPrefix' => '/tools', 'resourceUri' => 'https://glue.example/mcp', 'scopes' => []],
+            ]],
+            'name with upper-case letters' => [[
+                ['name' => 'Mcp', 'pathPrefix' => '/mcp', 'resourceUri' => 'https://glue.example/mcp', 'scopes' => []],
+            ]],
+            'path prefix without leading slash' => [[
+                ['name' => 'mcp', 'pathPrefix' => 'mcp', 'resourceUri' => 'https://glue.example/mcp', 'scopes' => []],
+            ]],
+            'path prefix with trailing slash' => [[
+                ['name' => 'mcp', 'pathPrefix' => '/mcp/', 'resourceUri' => 'https://glue.example/mcp/', 'scopes' => []],
+            ]],
+            'resource URI with a query' => [[
+                ['name' => 'mcp', 'pathPrefix' => '/mcp', 'resourceUri' => 'https://glue.example/mcp?a=1', 'scopes' => []],
+            ]],
+            'resource URI with a fragment' => [[
+                ['name' => 'mcp', 'pathPrefix' => '/mcp', 'resourceUri' => 'https://glue.example/mcp#a', 'scopes' => []],
+            ]],
+            'resource URI with user information' => [[
+                ['name' => 'mcp', 'pathPrefix' => '/mcp', 'resourceUri' => 'https://user@glue.example/mcp', 'scopes' => []],
+            ]],
+            'resource URI path differs from the path prefix' => [[
+                ['name' => 'mcp', 'pathPrefix' => '/mcp', 'resourceUri' => 'https://glue.example/other', 'scopes' => []],
+            ]],
+            'resource URI host not in normalized form' => [[
+                ['name' => 'mcp', 'pathPrefix' => '/mcp', 'resourceUri' => 'https://GLUE.example/mcp', 'scopes' => []],
+            ]],
         ];
     }
 
