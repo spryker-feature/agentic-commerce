@@ -22,6 +22,9 @@ use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig as SharedAgentic
 use SprykerFeature\Zed\AgenticCommerce\AgenticCommerceConfig;
 use stdClass;
 
+/**
+ * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+ */
 class ClientMetadataDocumentFetcher implements ClientMetadataDocumentFetcherInterface
 {
     use LoggerTrait;

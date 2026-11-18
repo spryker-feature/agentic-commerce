@@ -20,6 +20,10 @@ use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig as SharedAgentic
 use SprykerFeature\Zed\AgenticCommerce\Business\Scope\SupportedScopeReaderInterface;
 use SprykerFeature\Zed\AgenticCommerce\Persistence\AgenticCommerceEntityManagerInterface;
 
+/**
+ * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+ * @SuppressWarnings(PHPMD.NPathComplexity)
+ */
 class AgenticCommerceClientCreator implements AgenticCommerceClientCreatorInterface
 {
     use TransactionTrait;

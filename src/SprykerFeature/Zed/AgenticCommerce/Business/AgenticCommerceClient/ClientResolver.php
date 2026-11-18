@@ -19,6 +19,11 @@ use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig as SharedAgentic
 use SprykerFeature\Zed\AgenticCommerce\AgenticCommerceConfig;
 use SprykerFeature\Zed\AgenticCommerce\Persistence\AgenticCommerceRepositoryInterface;
 
+/**
+ * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+ * @SuppressWarnings(PHPMD.NPathComplexity)
+ */
 class ClientResolver implements ClientResolverInterface
 {
     use LoggerTrait;
