@@ -11,10 +11,16 @@ namespace SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient;
 
 use Generated\Shared\Transfer\AgenticCommerceClientCollectionRequestTransfer;
 use Generated\Shared\Transfer\AgenticCommerceClientCollectionResponseTransfer;
+use Generated\Shared\Transfer\AgenticCommerceClientCriteriaTransfer;
 
 interface AgenticCommerceClientStatusUpdaterInterface
 {
     public function updateAgenticCommerceClientCollection(
         AgenticCommerceClientCollectionRequestTransfer $agenticCommerceClientCollectionRequestTransfer
+    ): AgenticCommerceClientCollectionResponseTransfer;
+
+    public function updateAgenticCommerceClientStatusByCriteria(
+        AgenticCommerceClientCriteriaTransfer $agenticCommerceClientCriteriaTransfer,
+        string $status
     ): AgenticCommerceClientCollectionResponseTransfer;
 }

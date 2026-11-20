@@ -15,13 +15,17 @@ use SprykerFeature\Zed\AgenticCommerce\Persistence\AgenticCommerceRepositoryInte
 
 class ConsentReader implements ConsentReaderInterface
 {
-    public function __construct(protected AgenticCommerceRepositoryInterface $agenticCommerceRepository)
-    {
+    public function __construct(
+        protected AgenticCommerceRepositoryInterface $agenticCommerceRepository,
+        protected ConsentConstraintReaderInterface $consentConstraintReader
+    ) {
     }
 
     public function getAgenticCommerceConsentCollection(
         AgenticCommerceConsentCriteriaTransfer $agenticCommerceConsentCriteriaTransfer
     ): AgenticCommerceConsentCollectionTransfer {
-        return $this->agenticCommerceRepository->getAgenticCommerceConsentCollection($agenticCommerceConsentCriteriaTransfer);
+        return $this->consentConstraintReader->expandConsentCollectionWithConstraints(
+            $this->agenticCommerceRepository->getAgenticCommerceConsentCollection($agenticCommerceConsentCriteriaTransfer),
+        );
     }
 }

@@ -18,11 +18,13 @@ class FakePrincipalResolverPlugin implements AgenticCommercePrincipalResolverPlu
 {
     /**
      * @param array<string, string> $userIdentifiersByPrincipalReference
+     * @param array<string, string> $ownerCustomerReferencesByPrincipalReference
      */
     public function __construct(
         protected string $principalType,
         protected array $userIdentifiersByPrincipalReference,
-        protected bool $isActive = true
+        protected bool $isActive = true,
+        protected array $ownerCustomerReferencesByPrincipalReference = []
     ) {
     }
 
@@ -36,6 +38,12 @@ class FakePrincipalResolverPlugin implements AgenticCommercePrincipalResolverPlu
         $principalCollectionTransfer = new AgenticCommercePrincipalCollectionTransfer();
 
         foreach (array_keys($this->userIdentifiersByPrincipalReference) as $principalReference) {
+            $ownerCustomerReference = $this->ownerCustomerReferencesByPrincipalReference[$principalReference] ?? null;
+
+            if ($ownerCustomerReference !== null && $ownerCustomerReference !== $customerTransfer->getCustomerReference()) {
+                continue;
+            }
+
             $principalCollectionTransfer->addPrincipal((new AgenticCommercePrincipalTransfer())
                 ->setPrincipalType($this->principalType)
                 ->setPrincipalReference((string)$principalReference)

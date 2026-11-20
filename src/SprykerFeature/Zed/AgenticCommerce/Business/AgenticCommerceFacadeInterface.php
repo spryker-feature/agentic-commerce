@@ -9,6 +9,10 @@ declare(strict_types = 1);
 
 namespace SprykerFeature\Zed\AgenticCommerce\Business;
 
+use Generated\Shared\Transfer\AgenticCommerceAuthorizationDetailsTypeCollectionTransfer;
+use Generated\Shared\Transfer\AgenticCommerceAuthorizationDetailsTypeCriteriaTransfer;
+use Generated\Shared\Transfer\AgenticCommerceAuthorizationRequestTransfer;
+use Generated\Shared\Transfer\AgenticCommerceAuthorizationResponseTransfer;
 use Generated\Shared\Transfer\AgenticCommerceClientCollectionRequestTransfer;
 use Generated\Shared\Transfer\AgenticCommerceClientCollectionResponseTransfer;
 use Generated\Shared\Transfer\AgenticCommerceClientCollectionTransfer;
@@ -20,9 +24,18 @@ use Generated\Shared\Transfer\AgenticCommerceConsentCollectionRequestTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentCollectionResponseTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentCollectionTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentCriteriaTransfer;
+use Generated\Shared\Transfer\AgenticCommerceConsentEventTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentRevocationRequestTransfer;
+use Generated\Shared\Transfer\AgenticCommerceConsentUsageRequestTransfer;
+use Generated\Shared\Transfer\AgenticCommerceConsentUsageResponseTransfer;
+use Generated\Shared\Transfer\AgenticCommerceConstraintFieldCollectionTransfer;
+use Generated\Shared\Transfer\AgenticCommerceConstraintFieldRequestTransfer;
+use Generated\Shared\Transfer\AgenticCommerceGrantableScopesRequestTransfer;
+use Generated\Shared\Transfer\AgenticCommerceGrantableScopesResponseTransfer;
+use Generated\Shared\Transfer\AgenticCommercePrincipalCollectionTransfer;
 use Generated\Shared\Transfer\AgenticCommerceScopeCollectionTransfer;
 use Generated\Shared\Transfer\AgenticCommerceScopeCriteriaTransfer;
+use Generated\Shared\Transfer\CustomerTransfer;
 
 interface AgenticCommerceFacadeInterface
 {
@@ -82,6 +95,25 @@ interface AgenticCommerceFacadeInterface
 
     /**
      * Specification:
+     * - Sets the status of every delegated-access client that matches `AgenticCommerceClientCriteriaTransfer.agenticCommerceClientConditions`, as `updateAgenticCommerceClientCollection()` does for each of them.
+     * - Requires at least one of `clientIdentifiers`, `softwareIds` and `redirectHosts`; returns an `agentic_commerce.client.validation.criteria_required` error and changes nothing when none is given or any given value is empty.
+     * - Matches `redirectHosts` against the exact host of a stored redirect URI, both normalized by `AgenticCommerceServiceInterface::findNormalizedHost()`, so `evil.example` matches `Evil.Example.` but not `notevil.example`.
+     * - Returns an `agentic_commerce.client.validation.redirect_host_invalid` error and changes nothing when a redirect host is not valid once normalized or is a loopback host (`127.0.0.1`, `[::1]`, `localhost`).
+     * - On `blocked` with `softwareIds` or `redirectHosts`, records the family block in `blocked_by` of every blocked client: `software_id:<software id>`, or `redirect_host:<normalized host>` when no software id of the criteria matches the client (the first matching host of the criteria). A client keeps the first family block it received; a later one never replaces it. With only `clientIdentifiers`, records none.
+     * - The status change and the family block are written in one transaction; on `blocked` the client's consents are revoked afterwards as `revokeAgenticCommerceConsentsBySystem()` does.
+     * - Returns an error and changes nothing when `$status` is neither `active` nor `blocked`.
+     * - Matching no client is not an error.
+     * - Returns the updated clients in `agenticCommerceClients` and, on `blocked`, the revoked consents in `agenticCommerceConsents`.
+     *
+     * @api
+     */
+    public function updateAgenticCommerceClientStatusByCriteria(
+        AgenticCommerceClientCriteriaTransfer $agenticCommerceClientCriteriaTransfer,
+        string $status
+    ): AgenticCommerceClientCollectionResponseTransfer;
+
+    /**
+     * Specification:
      * - Replaces the scope ceiling of the delegated-access client identified by `$clientIdentifier` with `$scopeCeiling`; an empty list is a valid ceiling.
      * - Returns an error and changes nothing when `$clientIdentifier` is empty, no client has that identifier, or a scope is not supported.
      * - Returns the stored client in `agenticCommerceClients`.
@@ -115,6 +147,57 @@ interface AgenticCommerceFacadeInterface
 
     /**
      * Specification:
+     * - Validates an OAuth 2.0 authorization request (RFC 6749, The OAuth 2.0 Authorization Framework, section 4.1.1) before anything is shown to the customer.
+     * - Returns `isValid=false`, `isRedirectable=false` and error `invalid_client` when the client is unknown or its status is not `active`.
+     * - Returns `isValid=false`, `isRedirectable=false`, error `invalid_client` and failure reason `client_id_metadata_document_redirect_host_blocked` when a fetched Client ID Metadata Document (CIMD) has a redirect URI on a host that another client carries as its family block (`redirect_host:<host>`); loopback redirect URIs are left out.
+     * - Returns `isValid=false`, `isRedirectable=false` and error `invalid_request` when `redirectUri` matches none of the client's registered redirect URIs.
+     * - Redirect URIs match by exact string comparison; only for a registered loopback redirect URI (`http` to `127.0.0.1`, `[::1]` or `localhost`) the port of the requested URI is ignored (RFC 8252, OAuth 2.0 for Native Apps, section 7.3). Scheme, host, path and query always match exactly.
+     * - Sets `AgenticCommerceAuthorizationRequestTransfer.isLoopbackRedirect` to `true` when the matched redirect URI is a loopback redirect URI, `false` otherwise.
+     * - Returns `isRedirectable=true` with the client for every later failure only when the client is pre-registered or its trust level is `verified`; every other client (for example a `dynamic` client with trust level `unverified` or a `client_id_metadata_document` client with trust level `domain_verified`) gets `isRedirectable=false` with the client, so the caller shows its own error page instead of redirecting (RFC 9700, OAuth 2.0 Security Best Current Practice, section 4.11.2).
+     * - Returns error `unsupported_response_type` when `responseType` is not `code`.
+     * - Returns error `invalid_request` when `codeChallengeMethod` is not `S256` or `codeChallenge` is not a 43-character base64url value (RFC 7636, Proof Key for Code Exchange (PKCE) by OAuth Public Clients).
+     * - Returns error `invalid_target` when `resource` is not the resource URI of a declared protected resource (RFC 8707, Resource Indicators for OAuth 2.0).
+     * - Narrows the space-delimited `scope` to the requested scopes within the client's scope ceiling and the supported scopes; scopes outside them are dropped, never rejected.
+     * - Treats a missing or empty `scope` as a request for every supported scope in the client's scope ceiling.
+     * - Returns error `invalid_scope` when the narrowed set is empty and the client's scope ceiling is not; a client with an empty scope ceiling gets no error and continues without grantable scopes, so the consent page can say that the shop has granted it nothing yet.
+     * - Parses `authorizationDetails` (RFC 9396, OAuth 2.0 Rich Authorization Requests) when it is not empty, with the grantable scopes, the current store and its default currency, and without a principal:
+     *   - maps each object to a requested constraint of the stored constraint type, with the object without `type` as its value, of the plugins that implement `AgenticCommerceAuthorizationDetailsAwareConstraintPluginInterface`;
+     *   - returns error `invalid_authorization_details` when the parameter is not JSON, not a list, longer than 4096 bytes or has more than 10 objects, when an object has no string `type` or an unknown one, when two objects have one type, or when a plugin's `validate()` returns errors for a value;
+     *   - does not check whether a plugin is applicable.
+     * - Returns `isValid=true` with the client, the narrowed `grantableScopes` and `requestedConstraints` otherwise.
+     *
+     * @api
+     */
+    public function validateAgenticCommerceAuthorizationRequest(
+        AgenticCommerceAuthorizationRequestTransfer $agenticCommerceAuthorizationRequestTransfer
+    ): AgenticCommerceAuthorizationResponseTransfer;
+
+    /**
+     * Specification:
+     * - Returns the principals the customer may act as through a consent, from the stack of `AgenticCommercePrincipalResolverPluginInterface`.
+     * - The stack is first-applicable: returns the candidates of the first plugin in stack order that returns at least one, never a merge of several plugins.
+     * - Returns an empty collection when no plugin returns a candidate.
+     *
+     * @api
+     */
+    public function getAgenticCommercePrincipalCandidates(CustomerTransfer $customerTransfer): AgenticCommercePrincipalCollectionTransfer;
+
+    /**
+     * Specification:
+     * - Requires `AgenticCommerceGrantableScopesRequestTransfer.principal`.
+     * - Passes `AgenticCommerceGrantableScopesRequestTransfer.requestedScopes` through the stack of `AgenticCommerceScopeFilterPluginInterface`, each plugin narrowing the result of the previous one.
+     * - Returns only scopes that were requested, in request order, even when a plugin adds a scope.
+     * - Sets `AgenticCommerceGrantableScopesResponseTransfer.scopes` to one `AgenticCommerceScopeTransfer` per grantable scope in the same order, with the glossary key of the consent label; a scope no provider declares gets `agentic_commerce.scope.<name>` with `:` replaced by `.`.
+     * - The requested scopes are expected to be the `grantableScopes` of `validateAgenticCommerceAuthorizationRequest()`, so the client's scope ceiling and the supported scopes already apply.
+     *
+     * @api
+     */
+    public function getAgenticCommerceGrantableScopes(
+        AgenticCommerceGrantableScopesRequestTransfer $agenticCommerceGrantableScopesRequestTransfer
+    ): AgenticCommerceGrantableScopesResponseTransfer;
+
+    /**
+     * Specification:
      * - Requires `AgenticCommerceScopeCriteriaTransfer.agenticCommerceScopeConditions`.
      * - Returns one `AgenticCommerceScopeTransfer` per name of `AgenticCommerceScopeConditionsTransfer.names`, in the same order.
      * - Sets the glossary key of the consent label that the first `AgenticCommerceScopeProviderPluginInterface` declaring the scope names; any other scope, including one that only the deprecated `AgenticCommerceConstants::SUPPORTED_SCOPES` lists, gets `agentic_commerce.scope.<name>` with `:` replaced by `.`.
@@ -128,10 +211,55 @@ interface AgenticCommerceFacadeInterface
 
     /**
      * Specification:
+     * - Returns the `AgenticCommerceAuthorizationDetailsAwareConstraintPluginInterface::getAuthorizationDetailsType()` of every wired consent constraint plugin that implements the interface, in stack order.
+     * - Ignores a plugin that does not implement the interface.
+     *
+     * @api
+     */
+    public function getAgenticCommerceAuthorizationDetailsTypeCollection(
+        AgenticCommerceAuthorizationDetailsTypeCriteriaTransfer $agenticCommerceAuthorizationDetailsTypeCriteriaTransfer
+    ): AgenticCommerceAuthorizationDetailsTypeCollectionTransfer;
+
+    /**
+     * Specification:
+     * - Requires `AgenticCommerceConsentCollectionRequestTransfer.authorizationRequest` and validates it again as `validateAgenticCommerceAuthorizationRequest()` does; returns one error and persists nothing when it is invalid.
+     * - Removes repeated scopes from `grantedScopes`.
+     * - Validates per consent that `grantedScopes` is not empty, `durationInDays` is one of the configured consent durations, the store `storeName`, when given, is the current store, and the customer `customerReference` exists; the consent is always bound to the current store.
+     * - Validates that `AgenticCommerceConsentTransfer.principal` is one of the customer's principal candidates (see `getAgenticCommercePrincipalCandidates()`) and that its resolver builds a user identifier; returns error `principal_not_found` otherwise.
+     * - From then on uses only the matching server-built candidate, never fields of the submitted principal, and returns it as `AgenticCommerceConsentTransfer.principal`.
+     * - Validates that every granted scope is among the grantable scopes of the principal (see `getAgenticCommerceGrantableScopes()`); returns error `scope_not_grantable` otherwise.
+     * - Validates `AgenticCommerceConsentTransfer.constraints` of a consent that passed the rules above against the stack of `AgenticCommerceConsentConstraintPluginInterface`,
+     *   with the principal, the granted scopes, the store name and the store's default currency:
+     *   - drops a constraint whose plugin is not applicable or whose type no plugin declares;
+     *   - returns error `constraint_required` when an applicable plugin requires a constraint that is missing;
+     *   - returns the errors of the plugin's `validate()`;
+     *   - parses `AgenticCommerceAuthorizationRequestTransfer.authorizationDetails` again, with the consent's granted scopes, store and principal, and returns error `invalid_authorization_details` when it fails;
+     *   - returns error `requested_removed` for a requested constraint of an applicable plugin that is not submitted, and `wider_than_requested` when the submitted value is not narrower or equal according to `AgenticCommerceAuthorizationDetailsAwareConstraintPluginInterface::isNarrowerOrEqual()`; both with the constraint type as `ErrorTransfer.entityIdentifier`;
+     *   - does not enforce a requested constraint whose plugin is not applicable.
+     * - Adds an error per failed rule, with `ErrorTransfer.entityIdentifier` set to the item index.
+     * - Persists nothing when `AgenticCommerceConsentCollectionRequestTransfer.isTransactional` is `true` or not set and any item fails validation; persists the valid items otherwise.
+     * - In one transaction per request, per consent:
+     *   - locks the consenting customer's row in `spy_agentic_commerce_consent_lock`, created before the transaction when missing, so concurrent consents of one customer run one after another;
+     *   - creates the consent with status `active`, the principal and an expiry `durationInDays` from now;
+     *   - stores the validated constraints of the consent;
+     *   - writes event `granted`, or `re_consented` when the principal already holds an active consent for the same client and store; actor `customer`, the granted scopes, the client name shown on the consent page and the stored constraints;
+     *   - issues an authorization code through `OauthCodeFlowFacadeInterface::createOauthAuthorizationCodeCollection()`, bound to the client, redirect URI, code challenge, resource and consent, with the storefront identity scopes of the principal type before the granted scopes;
+     *   - revokes every other active consent of the same client, principal and store with `revokedBy` `customer`, as `revokeAgenticCommerceConsentsBySystem()` does, including its post-revoke plugin stack; consents of the customer for another store or another principal stay active; a replaced consent is tombstoned in the cache before the transaction commits, so when it rolls back, the consent stays active but is denied until the cache entry expires.
+     * - Rolls the whole transaction back and returns error `authorization_code_not_issued` when no code is issued, so replaced consents stay active.
+     * - Returns the created consents with `authorizationCode` set.
+     *
+     * @api
+     */
+    public function createAgenticCommerceConsentCollection(
+        AgenticCommerceConsentCollectionRequestTransfer $agenticCommerceConsentCollectionRequestTransfer
+    ): AgenticCommerceConsentCollectionResponseTransfer;
+
+    /**
+     * Specification:
      * - Returns consents filtered by `AgenticCommerceConsentCriteriaTransfer.agenticCommerceConsentConditions`.
      * - Filters by `uuids`, `customerReferences`, `principalTypes`, `principalReferences` and `clientIdentifiers` when provided; several conditions apply together.
      * - Filters by `statuses` using the effective status: a consent past `expiresAt` counts as `expired`, never as `active`.
-     * - Returns each consent with its effective status, principal, client and store name.
+     * - Returns each consent with its effective status, principal, client, store name and its constraints (see `getAgenticCommerceConsentConstraints()`), with value labels from the constraint plugins' field definitions.
      * - Sorts by `createdAt`, `expiresAt` or `lastUsedAt` via `sortCollection`; other fields are ignored; defaults to newest first.
      * - Supports offset/limit and page/maxPerPage pagination.
      *
@@ -140,6 +268,16 @@ interface AgenticCommerceFacadeInterface
     public function getAgenticCommerceConsentCollection(
         AgenticCommerceConsentCriteriaTransfer $agenticCommerceConsentCriteriaTransfer
     ): AgenticCommerceConsentCollectionTransfer;
+
+    /**
+     * Specification:
+     * - Returns the number of consents matching `AgenticCommerceConsentCriteriaTransfer.agenticCommerceConsentConditions`, without loading them.
+     * - Applies the same conditions as `getAgenticCommerceConsentCollection()`, including the effective status: a consent past `expiresAt` counts as `expired`, never as `active`.
+     * - Ignores `sortCollection` and `pagination`.
+     *
+     * @api
+     */
+    public function countAgenticCommerceConsents(AgenticCommerceConsentCriteriaTransfer $agenticCommerceConsentCriteriaTransfer): int;
 
     /**
      * Specification:
@@ -157,6 +295,22 @@ interface AgenticCommerceFacadeInterface
     public function updateAgenticCommerceConsentCollection(
         AgenticCommerceConsentCollectionRequestTransfer $agenticCommerceConsentCollectionRequestTransfer
     ): AgenticCommerceConsentCollectionResponseTransfer;
+
+    /**
+     * Specification:
+     * - Checks that the consent behind a delegated call may still be used; meant to run on every call.
+     * - Returns `isValid=false` with one generic error, and revokes nothing, when the consent does not exist, is not effectively active (revoked or past `expiresAt`), or its client identifier, customer reference or store name differs from the request.
+     * - Returns `isValid=false` with the same generic error, and revokes nothing, when no principal resolver is wired for the consent's principal type; the consent stays `active`.
+     * - Otherwise asks the principal resolver of the consent's principal type whether the principal is still active.
+     * - When the principal is inactive, revokes the consent with `revokedBy` `system_principal_inactive`, as `revokeAgenticCommerceConsentsBySystem()` does, and returns `isValid=false` with the same generic error.
+     * - Otherwise writes `lastUsedAt`, but only when it is empty or older than `AgenticCommerceConfig::getLastUsedAtWriteIntervalInSeconds()`.
+     * - Returns `isValid=true` with the consent; its `lastUsedAt` is the value read before this call's write.
+     *
+     * @api
+     */
+    public function validateAgenticCommerceConsentUsage(
+        AgenticCommerceConsentUsageRequestTransfer $agenticCommerceConsentUsageRequestTransfer
+    ): AgenticCommerceConsentUsageResponseTransfer;
 
     /**
      * Specification:
@@ -208,10 +362,79 @@ interface AgenticCommerceFacadeInterface
 
     /**
      * Specification:
+     * - Returns the stored constraints of the consent, oldest first, each with its `type` and `value`.
+     * - Skips a stored constraint whose type no `AgenticCommerceConsentConstraintPluginInterface` declares; the row stays in the database untouched.
+     * - Returns an empty list for an unknown consent.
+     *
+     * @api
+     *
+     * @return list<\Generated\Shared\Transfer\AgenticCommerceConsentConstraintTransfer>
+     */
+    public function getAgenticCommerceConsentConstraints(string $consentUuid): array;
+
+    /**
+     * Specification:
+     * - Requires `AgenticCommerceConstraintFieldRequestTransfer.principal`.
+     * - Returns one field per `AgenticCommerceConsentConstraintPluginInterface` applicable for the principal and `scopes`, in plugin order.
+     * - Each field is the plugin's field definition with `type` set to the plugin type and `isRequired` to the plugin's requirement for the principal and scopes.
+     *
+     * @api
+     */
+    public function getAgenticCommerceConsentConstraintFields(
+        AgenticCommerceConstraintFieldRequestTransfer $agenticCommerceConstraintFieldRequestTransfer
+    ): AgenticCommerceConstraintFieldCollectionTransfer;
+
+    /**
+     * Specification:
+     * - Returns the newest terms event of the consent: `granted`, `re_consented` or `scopes_narrowed`; of two events written in the same second the later written one.
+     * - The event carries `idAgenticCommerceConsentEvent`, its scopes and the constraints in force after it.
+     * - Returns `null` when the consent is unknown or has no terms event.
+     *
+     * @api
+     */
+    public function findLatestAgenticCommerceConsentTermsEvent(string $consentUuid): ?AgenticCommerceConsentEventTransfer;
+
+    /**
+     * Specification:
+     * - Returns the consent event with its scopes and constraints, expanded with `consentUuid`, the consent's current effective `consentStatus`, `consentRevokedAt`,
+     *   `clientIdentifier` (the OAuth client identifier), `clientUri` and `idCustomer`.
+     * - When the event stores no client name (a `scopes_narrowed` event), sets `clientName` from the latest `granted` or `re_consented` event of the same consent.
+     * - Returns `null` for an unknown event.
+     *
+     * @api
+     */
+    public function findAgenticCommerceConsentEventById(int $idAgenticCommerceConsentEvent): ?AgenticCommerceConsentEventTransfer;
+
+    /**
+     * Specification:
      * - Returns the consent uuid of the delegated Glue request the current Zed request is made for.
      * - Returns `null` outside a backend gateway request and for every Zed request that is not made for a delegated request.
      *
      * @api
      */
     public function findAgenticCommerceRequestConsentUuid(): ?string;
+
+    /**
+     * Specification:
+     * - Tombstones every consent cache entry of the customer, in every store of the region, through the feature Client.
+     * - For consents removed without a revocation, such as by the database cascade of a customer hard delete.
+     * - Logs a failure at error level and never throws; an entry left behind expires with the cache TTL.
+     *
+     * @api
+     */
+    public function invalidateAgenticCommerceConsentCacheByCustomerReference(string $customerReference): void;
+
+    /**
+     * Specification:
+     * - Returns those of the consent events that an order attribution references.
+     * - For an event without a client name, such as `scopes_narrowed`, that an order attribution references, also returns the latest `granted` or `re_consented` event of its consent,
+     *   ordered by `created_at` then id, both descending, when it is among the given ids: the Back Office block of the order shows the client name from it.
+     *
+     * @api
+     *
+     * @param list<int> $consentEventIds
+     *
+     * @return list<int>
+     */
+    public function filterAgenticCommerceOrderReferencedConsentEventIds(array $consentEventIds): array;
 }

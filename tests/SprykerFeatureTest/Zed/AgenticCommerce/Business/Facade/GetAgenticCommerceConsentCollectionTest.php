@@ -20,6 +20,7 @@ use Generated\Shared\Transfer\SortTransfer;
 use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig;
 use SprykerFeatureTest\Shared\AgenticCommerce\Helper\AgenticCommerceHelper;
 use SprykerFeatureTest\Zed\AgenticCommerce\AgenticCommerceBusinessTester;
+use SprykerFeatureTest\Zed\AgenticCommerce\Plugin\FakeAuthorizationDetailsAwareConstraintPlugin;
 
 /**
  * Auto-generated group annotations
@@ -59,6 +60,12 @@ class GetAgenticCommerceConsentCollectionTest extends Unit
     protected const int SECOND_PAGE = 2;
 
     protected const int CONSENT_COUNT = 3;
+
+    protected const string OPTION_VALUE = 'option-value';
+
+    protected const int SAME_PRINCIPAL_CONSENT_COUNT = 2;
+
+    protected const string OPTION_LABEL = 'Option label';
 
     protected AgenticCommerceBusinessTester $tester;
 
@@ -312,6 +319,35 @@ class GetAgenticCommerceConsentCollectionTest extends Unit
         $this->assertCount(static::CONSENT_COUNT - static::PAGE_SIZE, $collectionTransfer->getAgenticCommerceConsents());
         $this->assertSame(static::CONSENT_COUNT, $collectionTransfer->getPaginationOrFail()->getNbResults());
         $this->assertSame(static::SECOND_PAGE, $collectionTransfer->getPaginationOrFail()->getLastPage());
+    }
+
+    public function testGivenTwoConsentsOfOnePrincipalWithAListValuedConstraintWhenGettingThenTheFieldDefinitionIsBuiltOnceAndLabelsBothValues(): void
+    {
+        // Arrange
+        $constraintPlugin = new FakeAuthorizationDetailsAwareConstraintPlugin(options: [static::OPTION_VALUE => static::OPTION_LABEL]);
+        $this->tester->setConsentConstraintPlugins([$constraintPlugin]);
+        $customerTransfer = $this->tester->haveAgenticCommerceCustomer();
+
+        for ($consentIndex = 0; $consentIndex < static::SAME_PRINCIPAL_CONSENT_COUNT; $consentIndex++) {
+            $this->tester->haveAgenticCommerceConsentConstraint(
+                $this->tester->haveAgenticCommerceConsentForCustomer($customerTransfer),
+                FakeAuthorizationDetailsAwareConstraintPlugin::TYPE,
+                [FakeAuthorizationDetailsAwareConstraintPlugin::VALUE_KEY_ITEMS => [static::OPTION_VALUE]],
+            );
+        }
+
+        // Act
+        $collectionTransfer = $this->tester->getFacade()->getAgenticCommerceConsentCollection(
+            $this->createCriteria((new AgenticCommerceConsentConditionsTransfer())->addCustomerReference($customerTransfer->getCustomerReferenceOrFail())),
+        );
+
+        // Assert
+        $this->assertSame(1, $constraintPlugin->getFieldDefinitionCallCount());
+        $this->assertCount(static::SAME_PRINCIPAL_CONSENT_COUNT, $collectionTransfer->getAgenticCommerceConsents());
+
+        foreach ($collectionTransfer->getAgenticCommerceConsents() as $consentTransfer) {
+            $this->assertSame([static::OPTION_VALUE => static::OPTION_LABEL], $consentTransfer->getConstraints()->offsetGet(0)->getValueLabels());
+        }
     }
 
     protected function haveCustomerWithConsents(int $consentCount): string

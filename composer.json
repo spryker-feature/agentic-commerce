@@ -21,7 +21,7 @@
         "spryker/log": "^3.0.0",
         "spryker/money": "^2.0.0",
         "spryker/oauth": "^2.17.0",
-        "spryker/oauth-code-flow": "^1.0.0",
+        "spryker/oauth-code-flow": "^0.3.0",
         "spryker/oauth-company-user": "^2.0.0",
         "spryker/oauth-extension": "^1.9.0",
         "spryker/oms": "^11.0.0",

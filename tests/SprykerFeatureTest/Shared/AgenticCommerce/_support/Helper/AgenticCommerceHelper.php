@@ -184,7 +184,7 @@ class AgenticCommerceHelper extends Module
             ->setRedirectUris(json_encode($seed[AgenticCommerceClientTransfer::REDIRECT_URIS] ?? [static::REDIRECT_URI], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES))
             ->setScopeCeiling(json_encode($seed[AgenticCommerceClientTransfer::SCOPE_CEILING] ?? [static::SCOPE], JSON_THROW_ON_ERROR))
             ->setRegistrationType($seed[AgenticCommerceClientTransfer::REGISTRATION_TYPE] ?? AgenticCommerceConfig::CLIENT_REGISTRATION_TYPE_PRE_REGISTERED)
-            ->setTrustLevel(AgenticCommerceConfig::CLIENT_TRUST_LEVEL_VERIFIED)
+            ->setTrustLevel($seed[AgenticCommerceClientTransfer::TRUST_LEVEL] ?? AgenticCommerceConfig::CLIENT_TRUST_LEVEL_VERIFIED)
             ->setStatus($seed[AgenticCommerceClientTransfer::STATUS] ?? AgenticCommerceConfig::CLIENT_STATUS_ACTIVE)
             ->setClientUri($seed[AgenticCommerceClientTransfer::CLIENT_URI] ?? null)
             ->setLogoUri($seed[AgenticCommerceClientTransfer::LOGO_URI] ?? null)
@@ -798,7 +798,7 @@ class AgenticCommerceHelper extends Module
             ->update(['CreatedAt' => $this->shiftTimestampBySeconds($createdAt, -$seconds)]);
     }
 
-    protected function shiftTimestampBySeconds(string $timestamp, int $seconds): string
+    public function shiftTimestampBySeconds(string $timestamp, int $seconds): string
     {
         return (new DateTime($timestamp))->modify(sprintf('%+d seconds', $seconds))->format(static::DATE_TIME_FORMAT);
     }

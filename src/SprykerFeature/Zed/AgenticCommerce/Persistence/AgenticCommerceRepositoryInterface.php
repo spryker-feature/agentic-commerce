@@ -56,6 +56,19 @@ interface AgenticCommerceRepositoryInterface
     ): array;
 
     /**
+     * Same selection as `getActiveAgenticCommerceConsentUuidsByClientPrincipalAndStore()`, as a locking read: the consents stay locked until the open transaction ends.
+     * Must run before any plain read of its transaction; only the consent lock of the customer may come before it.
+     *
+     * @return list<string>
+     */
+    public function lockActiveAgenticCommerceConsentUuidsByClientPrincipalAndStore(
+        string $clientIdentifier,
+        string $principalType,
+        string $principalReference,
+        int $idStore
+    ): array;
+
+    /**
      * Locks the consent lock row of the customer until the open transaction ends, so consents of one customer are created one after another.
      * Must be the first statement of its transaction.
      * Returns `false` when the row does not exist; `AgenticCommerceEntityManagerInterface::createAgenticCommerceConsentLock()` creates it.

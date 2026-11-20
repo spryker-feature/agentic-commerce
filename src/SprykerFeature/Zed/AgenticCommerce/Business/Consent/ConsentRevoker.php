@@ -16,9 +16,11 @@ use Generated\Shared\Transfer\AgenticCommerceConsentConditionsTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentCriteriaTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentRevocationRequestTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentTransfer;
+use Generated\Shared\Transfer\AgenticCommerceRequestClientDataTransfer;
 use Generated\Shared\Transfer\ErrorTransfer;
 use Spryker\Zed\Kernel\Persistence\EntityManager\TransactionTrait;
 use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig;
+use SprykerFeature\Zed\AgenticCommerce\AgenticCommerceConfig as ZedAgenticCommerceConfig;
 use SprykerFeature\Zed\AgenticCommerce\Persistence\AgenticCommerceEntityManagerInterface;
 use SprykerFeature\Zed\AgenticCommerce\Persistence\AgenticCommerceRepositoryInterface;
 
@@ -38,6 +40,8 @@ class ConsentRevoker implements ConsentRevokerInterface
 
     protected const int REQUIRED_SELECTOR_COUNT = 1;
 
+    protected const int MINIMUM_BATCH_SIZE = 1;
+
     /**
      * @var list<string>
      */
@@ -45,6 +49,7 @@ class ConsentRevoker implements ConsentRevokerInterface
         AgenticCommerceConfig::CONSENT_REVOKED_BY_CUSTOMER,
         AgenticCommerceConfig::CONSENT_REVOKED_BY_CLIENT,
         AgenticCommerceConfig::CONSENT_REVOKED_BY_COMPANY_ADMIN,
+        AgenticCommerceConfig::CONSENT_REVOKED_BY_BACK_OFFICE,
         AgenticCommerceConfig::CONSENT_REVOKED_BY_SYSTEM_REUSE_DETECTED,
         AgenticCommerceConfig::CONSENT_REVOKED_BY_SYSTEM_CODE_REPLAY,
         AgenticCommerceConfig::CONSENT_REVOKED_BY_SYSTEM_PRINCIPAL_INACTIVE,
@@ -66,7 +71,9 @@ class ConsentRevoker implements ConsentRevokerInterface
         protected AgenticCommerceRepositoryInterface $agenticCommerceRepository,
         protected AgenticCommerceEntityManagerInterface $agenticCommerceEntityManager,
         protected ConsentEventWriterInterface $consentEventWriter,
-        protected array $agenticCommerceConsentPostRevokePlugins
+        protected array $agenticCommerceConsentPostRevokePlugins,
+        protected ZedAgenticCommerceConfig $agenticCommerceConfig,
+        protected ConsentCacheInvalidatorInterface $consentCacheInvalidator
     ) {
     }
 
@@ -101,6 +108,7 @@ class ConsentRevoker implements ConsentRevokerInterface
         $revokedAgenticCommerceConsentTransfers = $this->revokeInTransaction(
             array_values($revocableAgenticCommerceConsentTransfers),
             AgenticCommerceConfig::CONSENT_REVOKED_BY_CUSTOMER,
+            requestClientDataTransfer: $agenticCommerceConsentCollectionRequestTransfer->getRequestClientData(),
         );
 
         return $this->addCustomerRevocationResults(
@@ -121,16 +129,21 @@ class ConsentRevoker implements ConsentRevokerInterface
             return $agenticCommerceConsentCollectionResponseTransfer->addError((new ErrorTransfer())->setMessage($errorMessage));
         }
 
-        $agenticCommerceConsentTransfers = $this->getActiveConsents(
-            $this->resolveConsentUuids($agenticCommerceConsentRevocationRequestTransfer),
-        );
-        $revokedAgenticCommerceConsentTransfers = $this->revokeInTransaction(
-            $agenticCommerceConsentTransfers,
-            $agenticCommerceConsentRevocationRequestTransfer->getRevokedByOrFail(),
-        );
+        /** @var int<1, max> $batchSize */
+        $batchSize = max(static::MINIMUM_BATCH_SIZE, $this->agenticCommerceConfig->getConsentRevocationBatchSize());
+        $consentUuidBatches = array_chunk($this->resolveConsentUuids($agenticCommerceConsentRevocationRequestTransfer), $batchSize);
 
-        foreach ($revokedAgenticCommerceConsentTransfers as $revokedAgenticCommerceConsentTransfer) {
-            $agenticCommerceConsentCollectionResponseTransfer->addAgenticCommerceConsent($revokedAgenticCommerceConsentTransfer);
+        foreach ($consentUuidBatches as $consentUuidBatch) {
+            $revokedAgenticCommerceConsentTransfers = $this->revokeInTransaction(
+                $this->getActiveConsents($consentUuidBatch),
+                $agenticCommerceConsentRevocationRequestTransfer->getRevokedByOrFail(),
+                $agenticCommerceConsentRevocationRequestTransfer->getActorReference(),
+                $agenticCommerceConsentRevocationRequestTransfer->getRequestClientData(),
+            );
+
+            foreach ($revokedAgenticCommerceConsentTransfers as $revokedAgenticCommerceConsentTransfer) {
+                $agenticCommerceConsentCollectionResponseTransfer->addAgenticCommerceConsent($revokedAgenticCommerceConsentTransfer);
+            }
         }
 
         return $agenticCommerceConsentCollectionResponseTransfer;
@@ -141,17 +154,24 @@ class ConsentRevoker implements ConsentRevokerInterface
      *
      * @return list<\Generated\Shared\Transfer\AgenticCommerceConsentTransfer>
      */
-    protected function revokeInTransaction(array $agenticCommerceConsentTransfers, string $revokedBy): array
-    {
+    protected function revokeInTransaction(
+        array $agenticCommerceConsentTransfers,
+        string $revokedBy,
+        ?string $actorReference = null,
+        ?AgenticCommerceRequestClientDataTransfer $requestClientDataTransfer = null
+    ): array {
         if ($agenticCommerceConsentTransfers === []) {
             return [];
         }
 
         /** @var list<\Generated\Shared\Transfer\AgenticCommerceConsentTransfer> $revokedAgenticCommerceConsentTransfers */
-        $revokedAgenticCommerceConsentTransfers = $this->getTransactionHandler()->handleTransaction(function () use ($agenticCommerceConsentTransfers, $revokedBy): array {
-            return $this->executeRevokeTransaction($agenticCommerceConsentTransfers, $revokedBy);
+        $revokedAgenticCommerceConsentTransfers = $this->getTransactionHandler()->handleTransaction(function () use ($agenticCommerceConsentTransfers, $revokedBy, $actorReference, $requestClientDataTransfer): array {
+            return $this->executeRevokeTransaction($agenticCommerceConsentTransfers, $revokedBy, $actorReference, $requestClientDataTransfer);
         });
 
+        // Committed only when no outer transaction is open; inside a caller's transaction the tombstones and post-revoke plugins run before the caller commits.
+        // The cache tombstones go first, so a post-revoke plugin that throws cannot leave a revoked consent cached.
+        $this->consentCacheInvalidator->invalidateConsents($agenticCommerceConsentTransfers);
         $this->executeAgenticCommerceConsentPostRevokePlugins($revokedAgenticCommerceConsentTransfers);
 
         return $revokedAgenticCommerceConsentTransfers;
@@ -162,8 +182,12 @@ class ConsentRevoker implements ConsentRevokerInterface
      *
      * @return list<\Generated\Shared\Transfer\AgenticCommerceConsentTransfer>
      */
-    protected function executeRevokeTransaction(array $agenticCommerceConsentTransfers, string $revokedBy): array
-    {
+    protected function executeRevokeTransaction(
+        array $agenticCommerceConsentTransfers,
+        string $revokedBy,
+        ?string $actorReference,
+        ?AgenticCommerceRequestClientDataTransfer $requestClientDataTransfer
+    ): array {
         $revokedAgenticCommerceConsentTransfers = [];
 
         foreach ($agenticCommerceConsentTransfers as $agenticCommerceConsentTransfer) {
@@ -179,6 +203,8 @@ class ConsentRevoker implements ConsentRevokerInterface
                 static::EVENTS_BY_REVOKED_BY[$revokedBy] ?? AgenticCommerceConfig::CONSENT_EVENT_REVOKED,
                 $revokedBy,
                 array_values($agenticCommerceConsentTransfer->getGrantedScopes()),
+                actorReference: $actorReference,
+                requestClientDataTransfer: $requestClientDataTransfer,
             );
 
             $revokedAgenticCommerceConsentTransfers[] = $this->agenticCommerceRepository->findAgenticCommerceConsentByUuid($agenticCommerceConsentTransfer->getUuidOrFail())

@@ -46,6 +46,7 @@ use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
 class AgenticCommerceRepository extends AbstractRepository implements AgenticCommerceRepositoryInterface
 {
@@ -235,15 +236,35 @@ class AgenticCommerceRepository extends AbstractRepository implements AgenticCom
         string $principalReference,
         int $idStore
     ): array {
-        $agenticCommerceConsentQuery = $this->getFactory()
+        return $this->getActiveConsentUuids(
+            $this->createConsentByClientPrincipalAndStoreQuery($clientIdentifier, $principalType, $principalReference, $idStore),
+        );
+    }
+
+    public function lockActiveAgenticCommerceConsentUuidsByClientPrincipalAndStore(
+        string $clientIdentifier,
+        string $principalType,
+        string $principalReference,
+        int $idStore
+    ): array {
+        return $this->getActiveConsentUuids(
+            $this->createConsentByClientPrincipalAndStoreQuery($clientIdentifier, $principalType, $principalReference, $idStore)->lockForUpdate(),
+        );
+    }
+
+    protected function createConsentByClientPrincipalAndStoreQuery(
+        string $clientIdentifier,
+        string $principalType,
+        string $principalReference,
+        int $idStore
+    ): SpyAgenticCommerceConsentQuery {
+        return $this->getFactory()
             ->createAgenticCommerceConsentQuery()
             ->filterByPrincipalType($principalType)
             ->filterByPrincipalReference($principalReference)
             ->filterByFkStore($idStore)
             ->joinAgenticCommerceClient()
             ->where(sprintf('%s = ?', SpyAgenticCommerceClientTableMap::COL_FK_OAUTH_CLIENT), $clientIdentifier);
-
-        return $this->getActiveConsentUuids($agenticCommerceConsentQuery);
     }
 
     public function lockAgenticCommerceConsentLockByIdCustomer(int $idCustomer): bool

@@ -10,7 +10,10 @@ declare(strict_types = 1);
 namespace SprykerFeatureTest\Zed\AgenticCommerce\Business\AgenticCommerceClient;
 
 use Codeception\Test\Unit;
-use Generated\Shared\Transfer\AgenticCommerceClientMetadataTransfer;
+use GuzzleHttp\Psr7\Response;
+use Propel\Runtime\Exception\PropelException;
+use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConstants;
+use SprykerFeatureTest\Shared\AgenticCommerce\Helper\AgenticCommerceHelper;
 use SprykerFeatureTest\Zed\AgenticCommerce\AgenticCommerceBusinessTester;
 
 /**
@@ -26,38 +29,91 @@ use SprykerFeatureTest\Zed\AgenticCommerce\AgenticCommerceBusinessTester;
  */
 class ClientMetadataDocumentClientWriterTest extends Unit
 {
-    protected const string RENAMED_CLIENT_NAME = 'Renamed Procurement Assistant';
+    protected const string CLIENT_ID = 'https://vendor.example/oauth/client.json';
 
-    protected const string STORED_REDIRECT_URI = 'https://client.example/callback';
+    protected const string REDIRECT_URI = 'https://vendor.example/callback';
 
-    protected const string REFRESHED_REDIRECT_URI = 'https://client.example/new-callback';
-
-    protected const int CACHE_LIFETIME_SECONDS = 3600;
+    protected const int HTTP_STATUS_OK = 200;
 
     protected AgenticCommerceBusinessTester $tester;
 
-    public function testGivenStoredClientWhenItsDocumentIsRefreshedWithANewNameThenTheOauthClientTakesTheNewNameAndFirstRedirectUri(): void
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->tester->setConfig(AgenticCommerceConstants::CLIENT_ID_METADATA_DOCUMENT_ENABLED, true);
+        $this->tester->setScopeProviderPlugins([$this->tester->createScopeProviderPlugin([
+            AgenticCommerceHelper::SCOPE => 'agentic_commerce.scope.agentic-commerce.principal-read',
+        ])]);
+        $this->tester->allowAllHostsInTheAddressGuard();
+        $this->tester->mockClientMetadataDocumentResponse(new Response(
+            static::HTTP_STATUS_OK,
+            ['content-type' => 'application/json', 'cache-control' => 'max-age=3600'],
+            json_encode([
+                'client_id' => static::CLIENT_ID,
+                'client_name' => 'Vendor app',
+                'redirect_uris' => [static::REDIRECT_URI],
+                'token_endpoint_auth_method' => 'none',
+            ], JSON_THROW_ON_ERROR),
+        ));
+    }
+
+    /**
+     * @dataProvider duplicateKeyDataProvider
+     *
+     * @param list<int|string> $errorInfo
+     */
+    public function testGivenADuplicateKeyErrorWhenCreatingAClientThenItReadsAsCreatedConcurrently(array $errorInfo): void
     {
         // Arrange
-        $clientIdentifier = sprintf('https://client.example/%s/client-metadata.json', uniqid());
-        $storedClientTransfer = $this->tester->haveClientMetadataDocumentClient($clientIdentifier, [static::STORED_REDIRECT_URI], '-1 minute');
-        $clientMetadataTransfer = (new AgenticCommerceClientMetadataTransfer())
-            ->setClientId($clientIdentifier)
-            ->setClientName(static::RENAMED_CLIENT_NAME)
-            ->setRedirectUris([static::REFRESHED_REDIRECT_URI, static::STORED_REDIRECT_URI]);
+        $this->tester->simulateConcurrentCreationOfClientMetadataDocumentClient(static::CLIENT_ID, [static::REDIRECT_URI], $errorInfo);
+        $authorizationRequestTransfer = $this->tester->createValidAuthorizationRequestForClientIdentifier(static::CLIENT_ID, static::REDIRECT_URI);
 
         // Act
-        $clientTransfer = $this->tester->getFactory()
-            ->createClientMetadataDocumentClientWriter()
-            ->writeClient($clientMetadataTransfer, $storedClientTransfer, static::CACHE_LIFETIME_SECONDS);
+        $authorizationResponseTransfer = $this->tester->getFacade()->validateAgenticCommerceAuthorizationRequest($authorizationRequestTransfer);
 
         // Assert
-        $this->assertSame(static::RENAMED_CLIENT_NAME, $clientTransfer->getName());
-        $this->assertSame([static::REFRESHED_REDIRECT_URI, static::STORED_REDIRECT_URI], $clientTransfer->getRedirectUris());
-        $oauthClientTransfer = $this->tester->findOauthClient($clientIdentifier);
-        $this->assertSame(static::RENAMED_CLIENT_NAME, $oauthClientTransfer->getName());
-        $this->assertSame(static::REFRESHED_REDIRECT_URI, $oauthClientTransfer->getRedirectUri());
-        $this->assertNull($oauthClientTransfer->getSecret());
-        $this->assertFalse($oauthClientTransfer->getIsConfidential());
+        $this->assertTrue($authorizationResponseTransfer->getIsValid());
+        $this->assertSame(static::CLIENT_ID, $authorizationResponseTransfer->getAgenticCommerceClientOrFail()->getClientIdentifier());
+    }
+
+    /**
+     * @dataProvider otherIntegrityErrorDataProvider
+     *
+     * @param list<int|string> $errorInfo
+     */
+    public function testGivenAnotherIntegrityErrorWhenCreatingAClientThenTheExceptionIsNotSwallowed(array $errorInfo): void
+    {
+        // Arrange
+        $this->tester->simulateConcurrentCreationOfClientMetadataDocumentClient(static::CLIENT_ID, [static::REDIRECT_URI], $errorInfo);
+        $authorizationRequestTransfer = $this->tester->createValidAuthorizationRequestForClientIdentifier(static::CLIENT_ID, static::REDIRECT_URI);
+
+        // Assert
+        $this->expectException(PropelException::class);
+
+        // Act
+        $this->tester->getFacade()->validateAgenticCommerceAuthorizationRequest($authorizationRequestTransfer);
+    }
+
+    /**
+     * @return array<string, array{list<int|string>}>
+     */
+    public static function duplicateKeyDataProvider(): array
+    {
+        return [
+            'MySQL duplicate entry' => [['23000', 1062, 'Duplicate entry']],
+            'PostgreSQL unique violation' => [['23505', 7, 'duplicate key value']],
+        ];
+    }
+
+    /**
+     * @return array<string, array{list<int|string>}>
+     */
+    public static function otherIntegrityErrorDataProvider(): array
+    {
+        return [
+            'MySQL foreign key violation' => [['23000', 1452, 'Cannot add or update a child row']],
+            'PostgreSQL not-null violation' => [['23502', 7, 'null value']],
+        ];
     }
 }

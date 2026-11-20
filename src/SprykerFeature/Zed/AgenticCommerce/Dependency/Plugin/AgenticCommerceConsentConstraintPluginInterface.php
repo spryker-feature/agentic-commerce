@@ -57,6 +57,7 @@ interface AgenticCommerceConsentConstraintPluginInterface
     /**
      * Specification:
      * - Validates the submitted value; returns no errors for a valid value.
+     * - `AgenticCommerceConstraintFieldRequestTransfer.principal` is not set when the value comes from the `authorization_details` of an authorization request, before the customer chose a principal; it is set when a consent is created. A plugin must not require it here.
      *
      * @api
      *

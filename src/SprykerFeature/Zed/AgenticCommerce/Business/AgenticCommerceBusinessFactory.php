@@ -13,8 +13,12 @@ use GuzzleHttp\ClientInterface;
 use Spryker\Shared\Log\LoggerTrait;
 use Spryker\Zed\CompanyRole\Business\CompanyRoleFacadeInterface;
 use Spryker\Zed\CompanyUser\Business\CompanyUserFacadeInterface;
+use Spryker\Zed\Customer\Business\CustomerFacadeInterface;
 use Spryker\Zed\Kernel\Business\AbstractBusinessFactory;
 use Spryker\Zed\Oauth\Business\OauthFacadeInterface;
+use Spryker\Zed\OauthCodeFlow\Business\OauthCodeFlowFacadeInterface;
+use Spryker\Zed\Permission\Business\PermissionFacadeInterface;
+use Spryker\Zed\Store\Business\StoreFacadeInterface;
 use SprykerFeature\Client\AgenticCommerce\AgenticCommerceClientInterface;
 use SprykerFeature\Service\AgenticCommerce\AgenticCommerceServiceInterface;
 use SprykerFeature\Zed\AgenticCommerce\AgenticCommerceDependencyProvider;
@@ -48,14 +52,46 @@ use SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient\RedirectUr
 use SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient\RedirectUriValidatorInterface;
 use SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient\SelfRegisteredClientWriter;
 use SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient\SelfRegisteredClientWriterInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Authorization\AuthorizationDetailsBuilder;
+use SprykerFeature\Zed\AgenticCommerce\Business\Authorization\AuthorizationDetailsBuilderInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Authorization\AuthorizationDetailsParser;
+use SprykerFeature\Zed\AgenticCommerce\Business\Authorization\AuthorizationDetailsParserInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Authorization\AuthorizationDetailsTypeReader;
+use SprykerFeature\Zed\AgenticCommerce\Business\Authorization\AuthorizationDetailsTypeReaderInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Authorization\AuthorizationRequestValidator;
+use SprykerFeature\Zed\AgenticCommerce\Business\Authorization\AuthorizationRequestValidatorInterface;
 use SprykerFeature\Zed\AgenticCommerce\Business\Authorization\RedirectUriMatcher;
 use SprykerFeature\Zed\AgenticCommerce\Business\Authorization\RedirectUriMatcherInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Authorization\RequestedScopeNarrower;
+use SprykerFeature\Zed\AgenticCommerce\Business\Authorization\RequestedScopeNarrowerInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentAuthorizationCodeIssuer;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentAuthorizationCodeIssuerInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentCacheInvalidator;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentCacheInvalidatorInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentConstraintReader;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentConstraintReaderInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentConstraintValidator;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentConstraintValidatorInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentConstraintWriter;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentConstraintWriterInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentCreator;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentCreatorInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentEventReader;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentEventReaderInterface;
 use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentEventWriter;
 use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentEventWriterInterface;
 use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentReader;
 use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentReaderInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentResolver;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentResolverInterface;
 use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentRevoker;
 use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentRevokerInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentUsageValidator;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ConsentUsageValidatorInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\PrincipalResolver;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\PrincipalResolverInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ScopeNarrower;
+use SprykerFeature\Zed\AgenticCommerce\Business\Consent\ScopeNarrowerInterface;
 use SprykerFeature\Zed\AgenticCommerce\Business\Key\KeyPairDistinctnessValidator;
 use SprykerFeature\Zed\AgenticCommerce\Business\Key\KeyPairDistinctnessValidatorInterface;
 use SprykerFeature\Zed\AgenticCommerce\Business\Key\RefreshTokenEncryptionKeyDistinctnessValidator;
@@ -71,6 +107,8 @@ use SprykerFeature\Zed\AgenticCommerce\Business\ScopeFilter\CompanyRolePermissio
  * @method \SprykerFeature\Zed\AgenticCommerce\AgenticCommerceConfig getConfig()
  * @method \SprykerFeature\Zed\AgenticCommerce\Persistence\AgenticCommerceRepositoryInterface getRepository()
  * @method \SprykerFeature\Zed\AgenticCommerce\Persistence\AgenticCommerceEntityManagerInterface getEntityManager()
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 class AgenticCommerceBusinessFactory extends AbstractBusinessFactory
 {
@@ -205,6 +243,9 @@ class AgenticCommerceBusinessFactory extends AbstractBusinessFactory
             $this->getRepository(),
             $this->getEntityManager(),
             $this->createConsentRevoker(),
+            $this->createRedirectUriValidator(),
+            $this->getAgenticCommerceService(),
+            $this->getConfig(),
         );
     }
 
@@ -224,22 +265,135 @@ class AgenticCommerceBusinessFactory extends AbstractBusinessFactory
             $this->getEntityManager(),
             $this->createConsentEventWriter(),
             $this->getAgenticCommerceConsentPostRevokePlugins(),
+            $this->getConfig(),
+            $this->createConsentCacheInvalidator(),
         );
+    }
+
+    public function createConsentCacheInvalidator(): ConsentCacheInvalidatorInterface
+    {
+        return new ConsentCacheInvalidator($this->getAgenticCommerceClient(), $this->getStoreFacade(), $this->getLogger());
     }
 
     public function createConsentReader(): ConsentReaderInterface
     {
-        return new ConsentReader($this->getRepository());
+        return new ConsentReader($this->getRepository(), $this->createConsentConstraintReader());
+    }
+
+    public function createConsentUsageValidator(): ConsentUsageValidatorInterface
+    {
+        return new ConsentUsageValidator(
+            $this->getRepository(),
+            $this->getEntityManager(),
+            $this->createPrincipalResolver(),
+            $this->createConsentRevoker(),
+            $this->getConfig(),
+        );
+    }
+
+    public function createConsentCreator(): ConsentCreatorInterface
+    {
+        return new ConsentCreator(
+            $this->createAuthorizationRequestValidator(),
+            $this->createConsentResolver(),
+            $this->createConsentAuthorizationCodeIssuer(),
+            $this->createConsentRevoker(),
+            $this->createConsentEventWriter(),
+            $this->createConsentConstraintValidator(),
+            $this->createConsentConstraintWriter(),
+            $this->getRepository(),
+            $this->getEntityManager(),
+        );
+    }
+
+    public function createConsentResolver(): ConsentResolverInterface
+    {
+        return new ConsentResolver(
+            $this->createPrincipalResolver(),
+            $this->createScopeNarrower(),
+            $this->getCustomerFacade(),
+            $this->getStoreFacade(),
+            $this->getConfig(),
+        );
+    }
+
+    public function createConsentAuthorizationCodeIssuer(): ConsentAuthorizationCodeIssuerInterface
+    {
+        return new ConsentAuthorizationCodeIssuer($this->getOauthCodeFlowFacade(), $this->getConfig());
     }
 
     public function createConsentEventWriter(): ConsentEventWriterInterface
     {
-        return new ConsentEventWriter($this->getEntityManager());
+        return new ConsentEventWriter($this->getEntityManager(), $this->getConfig());
+    }
+
+    public function createConsentEventReader(): ConsentEventReaderInterface
+    {
+        return new ConsentEventReader($this->getRepository());
+    }
+
+    public function createConsentConstraintValidator(): ConsentConstraintValidatorInterface
+    {
+        return new ConsentConstraintValidator($this->getAgenticCommerceConsentConstraintPlugins(), $this->getStoreFacade(), $this->createAuthorizationDetailsParser());
+    }
+
+    public function createConsentConstraintWriter(): ConsentConstraintWriterInterface
+    {
+        return new ConsentConstraintWriter($this->getAgenticCommerceConsentConstraintPlugins(), $this->getRepository(), $this->getEntityManager());
+    }
+
+    public function createConsentConstraintReader(): ConsentConstraintReaderInterface
+    {
+        return new ConsentConstraintReader($this->getAgenticCommerceConsentConstraintPlugins(), $this->getRepository());
+    }
+
+    public function createPrincipalResolver(): PrincipalResolverInterface
+    {
+        return new PrincipalResolver($this->getAgenticCommercePrincipalResolverPlugins());
+    }
+
+    public function createScopeNarrower(): ScopeNarrowerInterface
+    {
+        return new ScopeNarrower($this->getAgenticCommerceScopeFilterPlugins(), $this->createSupportedScopeReader());
+    }
+
+    public function createAuthorizationRequestValidator(): AuthorizationRequestValidatorInterface
+    {
+        return new AuthorizationRequestValidator(
+            $this->createClientResolver(),
+            $this->getConfig(),
+            $this->createRedirectUriMatcher(),
+            $this->createRequestedScopeNarrower(),
+            $this->createSupportedScopeReader(),
+            $this->getAgenticCommerceService(),
+            $this->createAuthorizationDetailsParser(),
+            $this->getStoreFacade(),
+        );
+    }
+
+    public function createAuthorizationDetailsBuilder(): AuthorizationDetailsBuilderInterface
+    {
+        return new AuthorizationDetailsBuilder($this->getAgenticCommerceConsentConstraintPlugins(), $this->createConsentConstraintReader());
+    }
+
+    public function createAuthorizationDetailsTypeReader(): AuthorizationDetailsTypeReaderInterface
+    {
+        return new AuthorizationDetailsTypeReader($this->getAgenticCommerceConsentConstraintPlugins());
+    }
+
+    public function createAuthorizationDetailsParser(): AuthorizationDetailsParserInterface
+    {
+        return new AuthorizationDetailsParser($this->getAgenticCommerceConsentConstraintPlugins());
     }
 
     public function createRedirectUriMatcher(): RedirectUriMatcherInterface
     {
         return new RedirectUriMatcher($this->getConfig());
+    }
+
+    public function createRequestedScopeNarrower(): RequestedScopeNarrowerInterface
+    {
+        return new RequestedScopeNarrower();
     }
 
     public function createKeyPairDistinctnessValidator(): KeyPairDistinctnessValidatorInterface
@@ -281,6 +435,16 @@ class AgenticCommerceBusinessFactory extends AbstractBusinessFactory
         return $this->getProvidedDependency(AgenticCommerceDependencyProvider::FACADE_OAUTH);
     }
 
+    public function getOauthCodeFlowFacade(): OauthCodeFlowFacadeInterface
+    {
+        return $this->getProvidedDependency(AgenticCommerceDependencyProvider::FACADE_OAUTH_CODE_FLOW);
+    }
+
+    public function getCustomerFacade(): CustomerFacadeInterface
+    {
+        return $this->getProvidedDependency(AgenticCommerceDependencyProvider::FACADE_CUSTOMER);
+    }
+
     public function getCompanyUserFacade(): CompanyUserFacadeInterface
     {
         return $this->getProvidedDependency(AgenticCommerceDependencyProvider::FACADE_COMPANY_USER);
@@ -291,9 +455,19 @@ class AgenticCommerceBusinessFactory extends AbstractBusinessFactory
         return $this->getProvidedDependency(AgenticCommerceDependencyProvider::FACADE_COMPANY_ROLE);
     }
 
+    public function getPermissionFacade(): PermissionFacadeInterface
+    {
+        return $this->getProvidedDependency(AgenticCommerceDependencyProvider::FACADE_PERMISSION);
+    }
+
     public function getAgenticCommerceClient(): AgenticCommerceClientInterface
     {
         return $this->getProvidedDependency(AgenticCommerceDependencyProvider::CLIENT_AGENTIC_COMMERCE);
+    }
+
+    public function getStoreFacade(): StoreFacadeInterface
+    {
+        return $this->getProvidedDependency(AgenticCommerceDependencyProvider::FACADE_STORE);
     }
 
     public function getAgenticCommerceService(): AgenticCommerceServiceInterface
@@ -310,10 +484,34 @@ class AgenticCommerceBusinessFactory extends AbstractBusinessFactory
     }
 
     /**
+     * @return list<\SprykerFeature\Zed\AgenticCommerce\Dependency\Plugin\AgenticCommercePrincipalResolverPluginInterface>
+     */
+    public function getAgenticCommercePrincipalResolverPlugins(): array
+    {
+        return $this->getProvidedDependency(AgenticCommerceDependencyProvider::PLUGINS_AGENTIC_COMMERCE_PRINCIPAL_RESOLVER);
+    }
+
+    /**
+     * @return list<\SprykerFeature\Zed\AgenticCommerce\Dependency\Plugin\AgenticCommerceScopeFilterPluginInterface>
+     */
+    public function getAgenticCommerceScopeFilterPlugins(): array
+    {
+        return $this->getProvidedDependency(AgenticCommerceDependencyProvider::PLUGINS_AGENTIC_COMMERCE_SCOPE_FILTER);
+    }
+
+    /**
      * @return list<\SprykerFeature\Zed\AgenticCommerce\Dependency\Plugin\AgenticCommerceConsentPostRevokePluginInterface>
      */
     public function getAgenticCommerceConsentPostRevokePlugins(): array
     {
         return $this->getProvidedDependency(AgenticCommerceDependencyProvider::PLUGINS_AGENTIC_COMMERCE_CONSENT_POST_REVOKE);
+    }
+
+    /**
+     * @return list<\SprykerFeature\Zed\AgenticCommerce\Dependency\Plugin\AgenticCommerceConsentConstraintPluginInterface>
+     */
+    public function getAgenticCommerceConsentConstraintPlugins(): array
+    {
+        return $this->getProvidedDependency(AgenticCommerceDependencyProvider::PLUGINS_AGENTIC_COMMERCE_CONSENT_CONSTRAINT);
     }
 }

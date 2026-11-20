@@ -9,6 +9,10 @@ declare(strict_types = 1);
 
 namespace SprykerFeature\Zed\AgenticCommerce\Business;
 
+use Generated\Shared\Transfer\AgenticCommerceAuthorizationDetailsTypeCollectionTransfer;
+use Generated\Shared\Transfer\AgenticCommerceAuthorizationDetailsTypeCriteriaTransfer;
+use Generated\Shared\Transfer\AgenticCommerceAuthorizationRequestTransfer;
+use Generated\Shared\Transfer\AgenticCommerceAuthorizationResponseTransfer;
 use Generated\Shared\Transfer\AgenticCommerceClientCollectionRequestTransfer;
 use Generated\Shared\Transfer\AgenticCommerceClientCollectionResponseTransfer;
 use Generated\Shared\Transfer\AgenticCommerceClientCollectionTransfer;
@@ -20,15 +24,26 @@ use Generated\Shared\Transfer\AgenticCommerceConsentCollectionRequestTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentCollectionResponseTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentCollectionTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentCriteriaTransfer;
+use Generated\Shared\Transfer\AgenticCommerceConsentEventTransfer;
 use Generated\Shared\Transfer\AgenticCommerceConsentRevocationRequestTransfer;
+use Generated\Shared\Transfer\AgenticCommerceConsentUsageRequestTransfer;
+use Generated\Shared\Transfer\AgenticCommerceConsentUsageResponseTransfer;
+use Generated\Shared\Transfer\AgenticCommerceConstraintFieldCollectionTransfer;
+use Generated\Shared\Transfer\AgenticCommerceConstraintFieldRequestTransfer;
+use Generated\Shared\Transfer\AgenticCommerceGrantableScopesRequestTransfer;
+use Generated\Shared\Transfer\AgenticCommerceGrantableScopesResponseTransfer;
+use Generated\Shared\Transfer\AgenticCommercePrincipalCollectionTransfer;
 use Generated\Shared\Transfer\AgenticCommerceScopeCollectionTransfer;
 use Generated\Shared\Transfer\AgenticCommerceScopeCriteriaTransfer;
+use Generated\Shared\Transfer\CustomerTransfer;
 use Spryker\Zed\Kernel\Business\AbstractFacade;
 
 /**
  * @method \SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceBusinessFactory getFactory()
  * @method \SprykerFeature\Zed\AgenticCommerce\Persistence\AgenticCommerceRepositoryInterface getRepository()
  * @method \SprykerFeature\Zed\AgenticCommerce\Persistence\AgenticCommerceEntityManagerInterface getEntityManager()
+ *
+ * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
  */
 class AgenticCommerceFacade extends AbstractFacade implements AgenticCommerceFacadeInterface
 {
@@ -74,6 +89,20 @@ class AgenticCommerceFacade extends AbstractFacade implements AgenticCommerceFac
      *
      * @api
      */
+    public function updateAgenticCommerceClientStatusByCriteria(
+        AgenticCommerceClientCriteriaTransfer $agenticCommerceClientCriteriaTransfer,
+        string $status
+    ): AgenticCommerceClientCollectionResponseTransfer {
+        return $this->getFactory()
+            ->createAgenticCommerceClientStatusUpdater()
+            ->updateAgenticCommerceClientStatusByCriteria($agenticCommerceClientCriteriaTransfer, $status);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     */
     public function updateAgenticCommerceClientScopeCeiling(
         string $clientIdentifier,
         array $scopeCeiling
@@ -101,12 +130,76 @@ class AgenticCommerceFacade extends AbstractFacade implements AgenticCommerceFac
      *
      * @api
      */
+    public function validateAgenticCommerceAuthorizationRequest(
+        AgenticCommerceAuthorizationRequestTransfer $agenticCommerceAuthorizationRequestTransfer
+    ): AgenticCommerceAuthorizationResponseTransfer {
+        return $this->getFactory()
+            ->createAuthorizationRequestValidator()
+            ->validateAgenticCommerceAuthorizationRequest($agenticCommerceAuthorizationRequestTransfer);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     */
+    public function getAgenticCommercePrincipalCandidates(CustomerTransfer $customerTransfer): AgenticCommercePrincipalCollectionTransfer
+    {
+        return $this->getFactory()
+            ->createPrincipalResolver()
+            ->getCandidates($customerTransfer);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     */
+    public function getAgenticCommerceGrantableScopes(
+        AgenticCommerceGrantableScopesRequestTransfer $agenticCommerceGrantableScopesRequestTransfer
+    ): AgenticCommerceGrantableScopesResponseTransfer {
+        return $this->getFactory()
+            ->createScopeNarrower()
+            ->getGrantableScopes($agenticCommerceGrantableScopesRequestTransfer);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     */
     public function getAgenticCommerceScopeCollection(
         AgenticCommerceScopeCriteriaTransfer $agenticCommerceScopeCriteriaTransfer
     ): AgenticCommerceScopeCollectionTransfer {
         return $this->getFactory()
             ->createSupportedScopeReader()
             ->getScopeCollection($agenticCommerceScopeCriteriaTransfer);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     */
+    public function getAgenticCommerceAuthorizationDetailsTypeCollection(
+        AgenticCommerceAuthorizationDetailsTypeCriteriaTransfer $agenticCommerceAuthorizationDetailsTypeCriteriaTransfer
+    ): AgenticCommerceAuthorizationDetailsTypeCollectionTransfer {
+        return $this->getFactory()
+            ->createAuthorizationDetailsTypeReader()
+            ->getAuthorizationDetailsTypeCollection();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     */
+    public function createAgenticCommerceConsentCollection(
+        AgenticCommerceConsentCollectionRequestTransfer $agenticCommerceConsentCollectionRequestTransfer
+    ): AgenticCommerceConsentCollectionResponseTransfer {
+        return $this->getFactory()
+            ->createConsentCreator()
+            ->createAgenticCommerceConsentCollection($agenticCommerceConsentCollectionRequestTransfer);
     }
 
     /**
@@ -127,12 +220,35 @@ class AgenticCommerceFacade extends AbstractFacade implements AgenticCommerceFac
      *
      * @api
      */
+    public function countAgenticCommerceConsents(AgenticCommerceConsentCriteriaTransfer $agenticCommerceConsentCriteriaTransfer): int
+    {
+        return $this->getRepository()->countAgenticCommerceConsents($agenticCommerceConsentCriteriaTransfer);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     */
     public function updateAgenticCommerceConsentCollection(
         AgenticCommerceConsentCollectionRequestTransfer $agenticCommerceConsentCollectionRequestTransfer
     ): AgenticCommerceConsentCollectionResponseTransfer {
         return $this->getFactory()
             ->createConsentRevoker()
             ->updateAgenticCommerceConsentCollection($agenticCommerceConsentCollectionRequestTransfer);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     */
+    public function validateAgenticCommerceConsentUsage(
+        AgenticCommerceConsentUsageRequestTransfer $agenticCommerceConsentUsageRequestTransfer
+    ): AgenticCommerceConsentUsageResponseTransfer {
+        return $this->getFactory()
+            ->createConsentUsageValidator()
+            ->validateAgenticCommerceConsentUsage($agenticCommerceConsentUsageRequestTransfer);
     }
 
     /**
@@ -172,11 +288,86 @@ class AgenticCommerceFacade extends AbstractFacade implements AgenticCommerceFac
      * {@inheritDoc}
      *
      * @api
+     *
+     * @return list<\Generated\Shared\Transfer\AgenticCommerceConsentConstraintTransfer>
+     */
+    public function getAgenticCommerceConsentConstraints(string $consentUuid): array
+    {
+        return $this->getFactory()
+            ->createConsentConstraintReader()
+            ->getConsentConstraints($consentUuid);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     */
+    public function getAgenticCommerceConsentConstraintFields(
+        AgenticCommerceConstraintFieldRequestTransfer $agenticCommerceConstraintFieldRequestTransfer
+    ): AgenticCommerceConstraintFieldCollectionTransfer {
+        return $this->getFactory()
+            ->createConsentConstraintReader()
+            ->getConsentConstraintFields($agenticCommerceConstraintFieldRequestTransfer);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     */
+    public function findLatestAgenticCommerceConsentTermsEvent(string $consentUuid): ?AgenticCommerceConsentEventTransfer
+    {
+        return $this->getFactory()
+            ->createConsentEventReader()
+            ->findLatestConsentTermsEvent($consentUuid);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     */
+    public function findAgenticCommerceConsentEventById(int $idAgenticCommerceConsentEvent): ?AgenticCommerceConsentEventTransfer
+    {
+        return $this->getFactory()
+            ->createConsentEventReader()
+            ->findConsentEventById($idAgenticCommerceConsentEvent);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
      */
     public function findAgenticCommerceRequestConsentUuid(): ?string
     {
         return $this->getFactory()
             ->createRequestConsentUuidReader()
             ->findRequestConsentUuid();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     */
+    public function invalidateAgenticCommerceConsentCacheByCustomerReference(string $customerReference): void
+    {
+        $this->getFactory()->createConsentCacheInvalidator()->invalidateByCustomerReference($customerReference);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     *
+     * @param list<int> $consentEventIds
+     *
+     * @return list<int>
+     */
+    public function filterAgenticCommerceOrderReferencedConsentEventIds(array $consentEventIds): array
+    {
+        return $this->getRepository()->getReferencedConsentEventIds($consentEventIds);
     }
 }
