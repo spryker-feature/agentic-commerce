@@ -148,8 +148,6 @@ class ClientResolverTest extends Unit
 
         /** @var \SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceBusinessFactory $businessFactory */
         $businessFactory = $this->tester->getFactory();
-        /** @var \SprykerFeature\Zed\AgenticCommerce\AgenticCommerceConfig $agenticCommerceConfig */
-        $agenticCommerceConfig = $this->tester->getModuleConfig();
 
         return new ClientResolver(
             $repositoryMock,
@@ -159,9 +157,7 @@ class ClientResolverTest extends Unit
             $this->createMock(ClientMetadataDocumentClientWriterInterface::class),
             $businessFactory->createBlockedClientMatcher(),
             $this->createMock(ClientMetadataDocumentFailureCacheInterface::class),
-            $businessFactory->getAgenticCommerceClient(),
-            $businessFactory->getAgenticCommerceService(),
-            $agenticCommerceConfig,
+            $businessFactory->createClientMetadataDocumentRefusalChecker(),
         );
     }
 }

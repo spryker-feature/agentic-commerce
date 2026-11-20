@@ -12,17 +12,15 @@ namespace SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient;
 use Generated\Shared\Transfer\AgenticCommerceClientConditionsTransfer;
 use Generated\Shared\Transfer\AgenticCommerceClientCriteriaTransfer;
 use Generated\Shared\Transfer\PaginationTransfer;
-use Spryker\Shared\Log\LoggerTrait;
 use SprykerFeature\Service\AgenticCommerce\AgenticCommerceServiceInterface;
 use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig as SharedAgenticCommerceConfig;
+use SprykerFeature\Shared\AgenticCommerce\Exception\AgenticCommerceConfigurationException;
 use SprykerFeature\Zed\AgenticCommerce\AgenticCommerceConfig;
 use SprykerFeature\Zed\AgenticCommerce\Business\Authorization\RedirectUriMatcherInterface;
 use SprykerFeature\Zed\AgenticCommerce\Persistence\AgenticCommerceRepositoryInterface;
 
 class BlockedClientMatcher implements BlockedClientMatcherInterface
 {
-    use LoggerTrait;
-
     protected const int FAMILY_BLOCK_LOOKUP_LIMIT = 2;
 
     public function __construct(
@@ -97,7 +95,7 @@ class BlockedClientMatcher implements BlockedClientMatcherInterface
     }
 
     /**
-     * An entry that is not a valid host blocks none and is reported with a warning.
+     * @throws \SprykerFeature\Shared\AgenticCommerce\Exception\AgenticCommerceConfigurationException
      */
     protected function isDenylistedHost(string $host): bool
     {
@@ -108,7 +106,7 @@ class BlockedClientMatcher implements BlockedClientMatcherInterface
         );
 
         if ($invalidHosts !== []) {
-            $this->getLogger()->warning('The delegated access client host denylist holds hosts that are not valid; they are ignored.', ['invalidHosts' => array_values($invalidHosts)]);
+            throw new AgenticCommerceConfigurationException(sprintf('The delegated access client host denylist holds entries that are not valid hosts: %s.', implode(', ', $invalidHosts)));
         }
 
         return in_array($host, $this->agenticCommerceService->normalizeHosts($configuredHosts), true);

@@ -22,9 +22,6 @@ use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig as SharedAgentic
 use SprykerFeature\Zed\AgenticCommerce\AgenticCommerceConfig;
 use stdClass;
 
-/**
- * @SuppressWarnings(PHPMD.CyclomaticComplexity)
- */
 class ClientMetadataDocumentFetcher implements ClientMetadataDocumentFetcherInterface
 {
     use LoggerTrait;
@@ -131,16 +128,7 @@ class ClientMetadataDocumentFetcher implements ClientMetadataDocumentFetcherInte
             static::REQUEST_OPTION_CURL => $this->buildCurlOptions($documentUrl, $host, $allowedAddress),
         ]);
 
-        $connectedAddress = $documentTransfer->getConnectedAddress();
-
-        if (
-            $sink->isLimitExceeded()
-            || $connectedAddress === null
-            || !$this->hostAddressGuard->isSameAddress($connectedAddress, $allowedAddress)
-            || !$this->hostAddressGuard->isAllowedAddress($connectedAddress)
-            || $response->getStatusCode() !== static::HTTP_STATUS_OK
-            || !str_starts_with(strtolower($response->getHeaderLine(static::HEADER_CONTENT_TYPE)), static::CONTENT_TYPE_JSON)
-        ) {
+        if ($sink->isLimitExceeded() || !$this->isAcceptedResponse($response, $documentTransfer->getConnectedAddress(), $allowedAddress)) {
             return $documentTransfer->setFailureReason(SharedAgenticCommerceConfig::CLIENT_RESOLVE_FAILURE_FETCH_FAILED);
         }
 
@@ -155,6 +143,15 @@ class ClientMetadataDocumentFetcher implements ClientMetadataDocumentFetcherInte
             ->setIsFetched(true)
             ->setContent(json_decode($body, true, static::JSON_MAX_DEPTH, JSON_THROW_ON_ERROR))
             ->setCacheLifetimeSeconds($this->resolveCacheLifetimeSeconds($response->getHeaderLine(static::HEADER_CACHE_CONTROL)));
+    }
+
+    protected function isAcceptedResponse(ResponseInterface $response, ?string $connectedAddress, string $allowedAddress): bool
+    {
+        return $connectedAddress !== null
+            && $this->hostAddressGuard->isSameAddress($connectedAddress, $allowedAddress)
+            && $this->hostAddressGuard->isAllowedAddress($connectedAddress)
+            && $response->getStatusCode() === static::HTTP_STATUS_OK
+            && str_starts_with(strtolower($response->getHeaderLine(static::HEADER_CONTENT_TYPE)), static::CONTENT_TYPE_JSON);
     }
 
     /**

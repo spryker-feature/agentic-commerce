@@ -7,14 +7,17 @@
         "lcobucci/clock": "^2.0.0 || ^3.0.0",
         "lcobucci/jwt": "^4.0.0",
         "php": ">=8.3",
-        "psr/http-message": "^1.0.0",
+        "psr/http-client": "^1.0.0",
+        "psr/http-message": "^1.0.0 || ^2.0.0",
         "spryker-shop/shop-ui": "^1.3.0 || ^2.0.0",
         "spryker/application": "^3.0.0",
+        "spryker/application-extension": "^1.0.0",
         "spryker/category": "^5.10.0",
         "spryker/company-role": "^1.0.0",
         "spryker/company-unit-address": "^1.0.0",
         "spryker/company-user": "^2.0.0",
         "spryker/customer": "^7.0.0",
+        "spryker/error-handler": "^2.1.0",
         "spryker/glossary": "^3.0.0",
         "spryker/guzzle": "^2.4.1",
         "spryker/kernel": "^3.52.0",
@@ -43,14 +46,18 @@
         "spryker/util-encoding": "^2.0.0",
         "spryker/uuid-behavior": "^1.0.0",
         "spryker/zed-request": "^3.0.0",
-        "spryker/zed-request-extension": "^1.1.0"
+        "spryker/zed-request-extension": "^1.1.0",
+        "symfony/security-bundle": "^6.2.0 || ^7.0.0"
     },
     "require-dev": {
+        "nelmio/cors-bundle": "*",
+        "spryker/api-platform": "*",
         "spryker/code-sniffer": "*",
         "spryker/company": "*",
         "spryker/company-business-unit": "*",
         "spryker/config": "*",
         "spryker/container": "*",
+        "spryker/glue-application": "*",
         "spryker/oauth-cryptography": "*",
         "spryker/product": "*",
         "spryker/propel": "*",
@@ -70,7 +77,8 @@
             "SprykerFeatureTest\\Service\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Service/AgenticCommerce/_support/Helper/",
             "SprykerFeatureTest\\Client\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Client/AgenticCommerce/_support/Helper/",
             "SprykerFeatureTest\\Zed\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Zed/AgenticCommerce/_support/Helper/",
-            "SprykerFeatureTest\\Zed\\AgenticCommerce\\Plugin\\": "tests/SprykerFeatureTest/Zed/AgenticCommerce/_support/Plugin/"
+            "SprykerFeatureTest\\Zed\\AgenticCommerce\\Plugin\\": "tests/SprykerFeatureTest/Zed/AgenticCommerce/_support/Plugin/",
+            "SprykerFeatureTest\\Glue\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Glue/AgenticCommerce/_support/Helper/"
         }
     },
     "autoload-dev": {

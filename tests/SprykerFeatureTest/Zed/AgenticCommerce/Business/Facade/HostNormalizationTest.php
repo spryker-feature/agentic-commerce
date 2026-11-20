@@ -19,6 +19,7 @@ use Generated\Shared\Transfer\AgenticCommerceClientTransfer;
 use GuzzleHttp\Psr7\Response;
 use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig;
 use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConstants;
+use SprykerFeature\Shared\AgenticCommerce\Exception\AgenticCommerceConfigurationException;
 use SprykerFeatureTest\Shared\AgenticCommerce\Helper\AgenticCommerceHelper;
 use SprykerFeatureTest\Zed\AgenticCommerce\AgenticCommerceBusinessTester;
 
@@ -202,20 +203,18 @@ class HostNormalizationTest extends Unit
         $this->assertSame(0, $this->tester->getHttpRequestCount());
     }
 
-    public function testGivenAHostAllowlistOfOnlyInvalidEntriesWhenAClientIdIsResolvedThenItIsRefusedAsNotAllowedWithoutFetching(): void
+    public function testGivenAHostAllowlistOfOnlyInvalidEntriesWhenAClientIdIsResolvedThenAConfigurationExceptionIsThrown(): void
     {
         // Arrange
         $clientIdentifier = 'https://agents.example.com/client.json';
         $this->tester->setConfig(AgenticCommerceConstants::CLIENT_ID_METADATA_DOCUMENT_HOST_ALLOWLIST, ['*.claude.ai']);
         $this->tester->mockClientMetadataDocumentResponse($this->createDocumentResponse($clientIdentifier));
 
-        // Act
-        $authorizationResponseTransfer = $this->resolveClientForAuthorization($clientIdentifier);
-
         // Assert
-        $this->assertFalse($authorizationResponseTransfer->getIsValid());
-        $this->assertSame(AgenticCommerceConfig::CLIENT_RESOLVE_FAILURE_HOST_NOT_ALLOWED, $authorizationResponseTransfer->getFailureReason());
-        $this->assertSame(0, $this->tester->getHttpRequestCount());
+        $this->expectException(AgenticCommerceConfigurationException::class);
+
+        // Act
+        $this->resolveClientForAuthorization($clientIdentifier);
     }
 
     /**

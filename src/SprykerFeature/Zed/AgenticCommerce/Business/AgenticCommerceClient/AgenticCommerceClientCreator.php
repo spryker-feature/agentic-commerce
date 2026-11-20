@@ -20,10 +20,6 @@ use SprykerFeature\Shared\AgenticCommerce\AgenticCommerceConfig as SharedAgentic
 use SprykerFeature\Zed\AgenticCommerce\Business\Scope\SupportedScopeReaderInterface;
 use SprykerFeature\Zed\AgenticCommerce\Persistence\AgenticCommerceEntityManagerInterface;
 
-/**
- * @SuppressWarnings(PHPMD.CyclomaticComplexity)
- * @SuppressWarnings(PHPMD.NPathComplexity)
- */
 class AgenticCommerceClientCreator implements AgenticCommerceClientCreatorInterface
 {
     use TransactionTrait;
@@ -119,20 +115,52 @@ class AgenticCommerceClientCreator implements AgenticCommerceClientCreatorInterf
         AgenticCommerceClientTransfer $agenticCommerceClientTransfer,
         array $requestedClientIdentifiers
     ): array {
-        $errorMessages = [];
-        $clientIdentifier = (string)$agenticCommerceClientTransfer->getClientIdentifier();
+        return array_merge(
+            $this->validateClientIdentifier((string)$agenticCommerceClientTransfer->getClientIdentifier(), $requestedClientIdentifiers),
+            $this->validateName($agenticCommerceClientTransfer),
+            $this->validateRedirectUris($agenticCommerceClientTransfer),
+            $this->validateScopeCeiling($agenticCommerceClientTransfer),
+            $this->validateClientAndLogoUris($agenticCommerceClientTransfer),
+            $this->validateTrustLevel($agenticCommerceClientTransfer),
+        );
+    }
 
+    /**
+     * @param list<string> $requestedClientIdentifiers
+     *
+     * @return list<string>
+     */
+    protected function validateClientIdentifier(string $clientIdentifier, array $requestedClientIdentifiers): array
+    {
         if ($clientIdentifier === '') {
-            $errorMessages[] = static::ERROR_CLIENT_IDENTIFIER_REQUIRED;
+            return [static::ERROR_CLIENT_IDENTIFIER_REQUIRED];
         }
 
-        if ($clientIdentifier !== '' && ($this->isClientIdentifierTaken($clientIdentifier) || in_array($clientIdentifier, $requestedClientIdentifiers, true))) {
-            $errorMessages[] = static::ERROR_CLIENT_IDENTIFIER_TAKEN;
+        if ($this->isClientIdentifierTaken($clientIdentifier) || in_array($clientIdentifier, $requestedClientIdentifiers, true)) {
+            return [static::ERROR_CLIENT_IDENTIFIER_TAKEN];
         }
 
+        return [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function validateName(AgenticCommerceClientTransfer $agenticCommerceClientTransfer): array
+    {
         if ((string)$agenticCommerceClientTransfer->getName() === '') {
-            $errorMessages[] = static::ERROR_NAME_REQUIRED;
+            return [static::ERROR_NAME_REQUIRED];
         }
+
+        return [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function validateRedirectUris(AgenticCommerceClientTransfer $agenticCommerceClientTransfer): array
+    {
+        $errorMessages = [];
 
         if ($agenticCommerceClientTransfer->getRedirectUris() === []) {
             $errorMessages[] = static::ERROR_REDIRECT_URIS_REQUIRED;
@@ -142,6 +170,16 @@ class AgenticCommerceClientCreator implements AgenticCommerceClientCreatorInterf
             $errorMessages[] = static::ERROR_REDIRECT_URI_INVALID;
         }
 
+        return $errorMessages;
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function validateScopeCeiling(AgenticCommerceClientTransfer $agenticCommerceClientTransfer): array
+    {
+        $errorMessages = [];
+
         if ($agenticCommerceClientTransfer->getScopeCeiling() === []) {
             $errorMessages[] = static::ERROR_SCOPE_CEILING_REQUIRED;
         }
@@ -149,6 +187,16 @@ class AgenticCommerceClientCreator implements AgenticCommerceClientCreatorInterf
         if (array_diff($agenticCommerceClientTransfer->getScopeCeiling(), $this->supportedScopeReader->getSupportedScopeNames()) !== []) {
             $errorMessages[] = static::ERROR_SCOPE_UNSUPPORTED;
         }
+
+        return $errorMessages;
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function validateClientAndLogoUris(AgenticCommerceClientTransfer $agenticCommerceClientTransfer): array
+    {
+        $errorMessages = [];
 
         if (!$this->redirectUriValidator->isOptionalHttpsUri($agenticCommerceClientTransfer->getClientUri())) {
             $errorMessages[] = static::ERROR_CLIENT_URI_INVALID;
@@ -158,13 +206,21 @@ class AgenticCommerceClientCreator implements AgenticCommerceClientCreatorInterf
             $errorMessages[] = static::ERROR_LOGO_URI_INVALID;
         }
 
+        return $errorMessages;
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function validateTrustLevel(AgenticCommerceClientTransfer $agenticCommerceClientTransfer): array
+    {
         $trustLevel = $agenticCommerceClientTransfer->getTrustLevel();
 
         if ($trustLevel !== null && !in_array($trustLevel, static::SUPPORTED_TRUST_LEVELS, true)) {
-            $errorMessages[] = static::ERROR_TRUST_LEVEL_UNSUPPORTED;
+            return [static::ERROR_TRUST_LEVEL_UNSUPPORTED];
         }
 
-        return $errorMessages;
+        return [];
     }
 
     protected function isClientIdentifierTaken(string $clientIdentifier): bool

@@ -34,6 +34,8 @@ use SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient\ClientMeta
 use SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient\ClientMetadataDocumentFailureCacheInterface;
 use SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient\ClientMetadataDocumentFetcher;
 use SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient\ClientMetadataDocumentFetcherInterface;
+use SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient\ClientMetadataDocumentRefusalChecker;
+use SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient\ClientMetadataDocumentRefusalCheckerInterface;
 use SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient\ClientMetadataMapper;
 use SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient\ClientMetadataMapperInterface;
 use SprykerFeature\Zed\AgenticCommerce\Business\AgenticCommerceClient\ClientMetadataValidator;
@@ -170,6 +172,15 @@ class AgenticCommerceBusinessFactory extends AbstractBusinessFactory
             $this->createClientMetadataMapper(),
             $this->createClientMetadataValidator(),
             $this->createClientMetadataDocumentClientWriter(),
+            $this->createBlockedClientMatcher(),
+            $this->createClientMetadataDocumentFailureCache(),
+            $this->createClientMetadataDocumentRefusalChecker(),
+        );
+    }
+
+    public function createClientMetadataDocumentRefusalChecker(): ClientMetadataDocumentRefusalCheckerInterface
+    {
+        return new ClientMetadataDocumentRefusalChecker(
             $this->createBlockedClientMatcher(),
             $this->createClientMetadataDocumentFailureCache(),
             $this->getAgenticCommerceClient(),
