@@ -1,0 +1,14 @@
+{% extends template('page-layout-main') %}
+
+{% define data = {
+    heading: 'agentic_commerce.temporarily_unavailable.heading' | trans,
+    text: 'agentic_commerce.temporarily_unavailable.text' | trans,
+} %}
+
+{% block content %}
+    <div class="box" data-qa="agentic-commerce-temporarily-unavailable">
+        <h1 class="title title--h3">{{ data.heading }}</h1>
+        <p>{{ data.text }}</p>
+        <a class="link" href="{{ url('home') }}">{{ 'agentic_commerce.error.back' | trans }}</a>
+    </div>
+{% endblock %}

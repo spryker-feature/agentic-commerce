@@ -1,0 +1,117 @@
+{# @var data.agenticCommerceClient \Generated\Shared\Transfer\AgenticCommerceClientTransfer #}
+{# @var data.constraintFields array<string, \Generated\Shared\Transfer\AgenticCommerceConstraintFieldTransfer> #}
+
+{% extends template('page-layout-main') %}
+
+{% define data = {
+    form: _view.consentForm,
+    agenticCommerceClient: _view.agenticCommerceClient,
+    redirectHost: _view.redirectHost,
+    isLoopbackRedirect: _view.isLoopbackRedirect,
+    isVerifiedClient: _view.isVerifiedClient,
+    clientHost: _view.clientHost,
+    trustLevel: _view.trustLevel,
+    clientIdHost: _view.clientIdHost,
+    showLogo: _view.showLogo,
+    hasGrantableScopes: _view.hasGrantableScopes,
+    isOrderPlacementOffered: _view.isOrderPlacementOffered,
+    constraintFields: _view.constraintFields,
+    constraintScopes: _view.constraintScopes,
+    shop: 'global.spryker.shop' | trans,
+    title: 'agentic_commerce.consent.page_title' | trans,
+} %}
+
+{% set appName = data.agenticCommerceClient.name %}
+
+{% block content %}
+    <div class="box" data-qa="agentic-commerce-consent">
+        {% include '@AgenticCommerce/views/consent/client-identity.twig' with {
+            agenticCommerceClient: data.agenticCommerceClient,
+            clientHost: data.clientHost,
+            showLogo: data.showLogo,
+        } only %}
+
+        <h1 class="title title--h3">{{ 'agentic_commerce.consent.heading' | trans({'%app%': appName, '%shop%': data.shop}) }}</h1>
+
+        {% if data.isVerifiedClient %}
+            <p title="{{ 'agentic_commerce.consent.badge.verified.help' | trans({'%shop%': data.shop}) }}">{{ 'agentic_commerce.consent.badge.verified' | trans({'%shop%': data.shop}) }}</p>
+        {% elseif data.trustLevel == 'domain_verified' or data.trustLevel == 'unverified' %}
+            {% if data.trustLevel == 'unverified' %}
+                <p>{{ 'agentic_commerce.consent.badge.unverified' | trans }}</p>
+            {% endif %}
+            {% include '@AgenticCommerce/views/consent/client-trust-level.twig' with {
+                trustLevel: data.trustLevel,
+                clientIdHost: data.clientIdHost,
+                redirectHost: data.redirectHost,
+            } only %}
+        {% else %}
+            <p>{{ 'agentic_commerce.consent.badge.unverified' | trans }} - {{ 'agentic_commerce.consent.badge.unverified.help' | trans({'%shop%': data.shop}) }}</p>
+        {% endif %}
+
+        <p>{{ 'agentic_commerce.consent.return' | trans({'%redirect_host%': data.redirectHost}) }}</p>
+
+        {% include '@AgenticCommerce/views/consent/loopback-redirect-warning.twig' with {
+            isLoopbackRedirect: data.isLoopbackRedirect,
+            redirectHost: data.redirectHost,
+        } only %}
+
+        {# A constraint field hides while its scope is unticked, without JavaScript. #}
+        <style>
+            {% set hidableScopes = [] %}
+            {% for constraintScope in data.constraintScopes %}
+                {% if constraintScope not in hidableScopes %}
+                    {% set hidableScopes = hidableScopes | merge([constraintScope]) %}
+                    .agentic-commerce-consent-form:has(input[name="{{ data.form.scopes.vars.full_name }}[]"][value="{{ constraintScope }}"]:not(:checked)) [data-constraint-scope="{{ constraintScope }}"] {
+                        display: none;
+                    }
+                {% endif %}
+            {% endfor %}
+        </style>
+
+        {{ form_start(data.form, {attr: {class: 'agentic-commerce-consent-form'}}) }}
+            {{ form_errors(data.form) }}
+
+            {{ form_row(data.form.principal) }}
+            <p>{{ 'agentic_commerce.consent.principal.help' | trans }}</p>
+
+            {% if data.hasGrantableScopes %}
+                <h2 class="title title--h5">{{ 'agentic_commerce.consent.scopes.heading' | trans({'%app%': appName}) }}</h2>
+                <p>{{ 'agentic_commerce.consent.scopes.help' | trans }}</p>
+                {{ form_errors(data.form.scopes) }}
+                {% for scope in data.form.scopes %}
+                    {{ form_widget(scope) }}
+                {% endfor %}
+                {% include '@AgenticCommerce/views/consent/constraint-fields.twig' with {
+                    form: data.form.constraints,
+                    constraintFields: data.constraintFields,
+                    constraintScopes: data.constraintScopes,
+                } only %}
+                {% do data.form.constraints.setRendered %}
+                {% if not data.isOrderPlacementOffered %}
+                    <p>{{ 'agentic_commerce.consent.no_orders' | trans }}</p>
+                {% endif %}
+            {% else %}
+                {% do data.form.scopes.setRendered %}
+                {% do data.form.constraints.setRendered %}
+                <p data-qa="agentic-commerce-no-scopes">{{ 'agentic_commerce.consent.no_scopes' | trans }}</p>
+            {% endif %}
+
+            <h2 class="title title--h5">{{ 'agentic_commerce.consent.duration.label' | trans }}</h2>
+            {% for duration in data.form.durationInDays %}
+                {% set durationLabel = duration.vars.value == '1'
+                    ? 'agentic_commerce.consent.duration.one_day' | trans
+                    : 'agentic_commerce.consent.duration.days' | trans({'%days%': duration.vars.value}) %}
+                {{ form_widget(duration, {label: durationLabel}) }}
+            {% endfor %}
+
+            {% if data.hasGrantableScopes %}
+                {{ form_widget(data.form.allow, {attr: {class: 'button', 'data-qa': 'agentic-commerce-allow'}}) }}
+            {% else %}
+                {% do data.form.allow.setRendered %}
+            {% endif %}
+            {{ form_widget(data.form.deny, {attr: {class: 'button button--hollow', 'data-qa': 'agentic-commerce-deny'}}) }}
+
+            <p>{{ 'agentic_commerce.consent.footer' | trans }}</p>
+        {{ form_end(data.form) }}
+    </div>
+{% endblock %}

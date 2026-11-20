@@ -1,0 +1,27 @@
+{% extends template('page-layout-main') %}
+
+{% define data = {
+    error: _view.authorizationError,
+    message: _view.authorizationMessage | default(''),
+    redirectUrl: _view.redirectUrl | default(null),
+    shop: 'global.spryker.shop' | trans,
+    title: 'agentic_commerce.consent.page_title' | trans,
+} %}
+
+{% block content %}
+    <div class="box" data-qa="agentic-commerce-authorization-error">
+        {% if data.message %}
+            <h1 class="title title--h3">{{ data.title }}</h1>
+            <p>{{ data.message | trans }}</p>
+        {% else %}
+            <h1 class="title title--h3">{{ ('agentic_commerce.error.' ~ data.error ~ '.heading') | trans({'%shop%': data.shop}) }}</h1>
+            <p>{{ ('agentic_commerce.error.' ~ data.error ~ '.body') | trans({'%shop%': data.shop}) }}</p>
+        {% endif %}
+        {% if data.redirectUrl %}
+            <a class="button" href="{{ data.redirectUrl }}" rel="noreferrer" data-qa="agentic-commerce-continue">
+                {{ 'agentic_commerce.redirect.continue' | trans }}
+            </a>
+        {% endif %}
+        <a class="link" href="{{ url('home') }}">{{ 'agentic_commerce.error.back' | trans }}</a>
+    </div>
+{% endblock %}

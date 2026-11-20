@@ -1,0 +1,37 @@
+{# @var data.agenticCommerceClient \Generated\Shared\Transfer\AgenticCommerceClientTransfer #}
+
+{% extends template('page-layout-main') %}
+
+{% define data = {
+    loginForm: _view.loginForm,
+    agenticCommerceClient: _view.agenticCommerceClient,
+    title: 'agentic_commerce.consent.page_title' | trans,
+} %}
+
+{% block content %}
+    <div class="box" data-qa="agentic-commerce-relogin">
+        <p>{{ 'agentic_commerce.relogin.first' | trans }}</p>
+
+        {% include molecule('form') with {
+            data: {
+                title: 'customer.login.title' | trans,
+                form: data.loginForm,
+                submit: {
+                    enable: true,
+                    text: 'forms.submit.login' | trans,
+                },
+            },
+        } only %}
+
+        {% widget 'MultiFactorAuthHandlerWidget' with {
+            data: {
+                id: data.loginForm.vars.name,
+                url: 'multiFactorAuth/getCustomerEnabledTypes',
+                formSelector: '[name="' ~ data.loginForm.vars.name ~ '"]',
+                isLoginFlow: 'true',
+                isJsEnabledHandler: 'true',
+            },
+        } only %}
+        {% endwidget %}
+    </div>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% if trustLevel == 'domain_verified' and clientIdHost %}
+    <p data-qa="agentic-commerce-trust-domain-verified">{{ 'agentic_commerce.consent.trust.domain_verified' | trans({'%client_id_host%': clientIdHost}) }}</p>
+{% elseif trustLevel == 'unverified' %}
+    <p class="text-alert" data-qa="agentic-commerce-trust-unverified">{{ 'agentic_commerce.consent.trust.unverified' | trans({'%redirect_host%': redirectHost}) }}</p>
+{% endif %}

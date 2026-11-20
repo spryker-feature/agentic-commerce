@@ -9,6 +9,9 @@
         "php": ">=8.3",
         "psr/http-client": "^1.0.0",
         "psr/http-message": "^1.0.0 || ^2.0.0",
+        "spryker-shop/customer-page": "^2.0.0",
+        "spryker-shop/customer-page-extension": "^1.2.0",
+        "spryker-shop/shop-application": "^1.1.0",
         "spryker-shop/shop-ui": "^1.3.0 || ^2.0.0",
         "spryker/application": "^3.0.0",
         "spryker/application-extension": "^1.0.0",
@@ -16,13 +19,17 @@
         "spryker/company-role": "^1.0.0",
         "spryker/company-unit-address": "^1.0.0",
         "spryker/company-user": "^2.0.0",
+        "spryker/currency": "^4.0.0",
         "spryker/customer": "^7.0.0",
         "spryker/error-handler": "^2.1.0",
+        "spryker/event-dispatcher-extension": "^1.0.0",
         "spryker/glossary": "^3.0.0",
+        "spryker/glossary-storage": "^1.0.0",
         "spryker/guzzle": "^2.4.1",
         "spryker/kernel": "^3.52.0",
         "spryker/log": "^3.0.0",
         "spryker/money": "^2.0.0",
+        "spryker/multi-cart": "^1.7.0",
         "spryker/oauth": "^2.17.0",
         "spryker/oauth-code-flow": "^0.3.0",
         "spryker/oauth-company-user": "^2.0.0",
@@ -39,6 +46,7 @@
         "spryker/sales": "^11.0.0",
         "spryker/security-blocker": "^1.3.0",
         "spryker/security-blocker-extension": "^1.0.0",
+        "spryker/session": "^4.0.0",
         "spryker/store": "^1.19.0",
         "spryker/symfony": "^3.21.0",
         "spryker/transfer": "^3.27.0",
@@ -51,17 +59,21 @@
     },
     "require-dev": {
         "nelmio/cors-bundle": "*",
+        "spryker-shop/company-page": "*",
         "spryker/api-platform": "*",
         "spryker/code-sniffer": "*",
         "spryker/company": "*",
         "spryker/company-business-unit": "*",
         "spryker/config": "*",
         "spryker/container": "*",
+        "spryker/event-dispatcher": "*",
         "spryker/glue-application": "*",
         "spryker/oauth-cryptography": "*",
         "spryker/product": "*",
         "spryker/propel": "*",
-        "spryker/testify": "*"
+        "spryker/router": "*",
+        "spryker/testify": "*",
+        "spryker/twig": "*"
     },
     "suggest": {
         "spryker-shop/company-page": "Required to render the company connected apps page in the company account layout and its entry in the company account navigation.",
@@ -78,7 +90,8 @@
             "SprykerFeatureTest\\Client\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Client/AgenticCommerce/_support/Helper/",
             "SprykerFeatureTest\\Zed\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Zed/AgenticCommerce/_support/Helper/",
             "SprykerFeatureTest\\Zed\\AgenticCommerce\\Plugin\\": "tests/SprykerFeatureTest/Zed/AgenticCommerce/_support/Plugin/",
-            "SprykerFeatureTest\\Glue\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Glue/AgenticCommerce/_support/Helper/"
+            "SprykerFeatureTest\\Glue\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Glue/AgenticCommerce/_support/Helper/",
+            "SprykerFeatureTest\\Yves\\AgenticCommerce\\Helper\\": "tests/SprykerFeatureTest/Yves/AgenticCommerce/_support/Helper/"
         }
     },
     "autoload-dev": {

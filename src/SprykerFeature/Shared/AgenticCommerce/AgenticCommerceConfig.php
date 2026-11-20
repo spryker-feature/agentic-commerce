@@ -107,6 +107,44 @@ class AgenticCommerceConfig extends AbstractSharedConfig
      */
     public const string CONSTRAINT_VALUE_KEY_CATEGORY_KEYS = 'categoryKeys';
 
+    /**
+     * An amount in the field currency, submitted in major units and kept in cents.
+     *
+     * @api
+     */
+    public const string CONSTRAINT_INPUT_KIND_MONEY = 'money';
+
+    /**
+     * An amount as above together with the period it applies to.
+     *
+     * @api
+     */
+    public const string CONSTRAINT_INPUT_KIND_MONEY_PERIOD = 'money_period';
+
+    /**
+     * Several values of one flat list, ticked as checkboxes.
+     *
+     * @api
+     */
+    public const string CONSTRAINT_INPUT_KIND_MULTI_SELECT = 'multi_select';
+
+    /**
+     * Several values of a list with parents, ticked as checkboxes and shown nested by the parents.
+     *
+     * @api
+     */
+    public const string CONSTRAINT_INPUT_KIND_CATEGORY_TREE = 'category_tree';
+
+    /**
+     * @api
+     */
+    public const array SUPPORTED_CONSTRAINT_INPUT_KINDS = [
+        self::CONSTRAINT_INPUT_KIND_MONEY,
+        self::CONSTRAINT_INPUT_KIND_MONEY_PERIOD,
+        self::CONSTRAINT_INPUT_KIND_MULTI_SELECT,
+        self::CONSTRAINT_INPUT_KIND_CATEGORY_TREE,
+    ];
+
     public const string BUDGET_PERIOD_DAY = 'day';
 
     public const string BUDGET_PERIOD_WEEK = 'week';

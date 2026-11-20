@@ -1,0 +1,22 @@
+{% extends template('page-layout-main') %}
+
+{% define data = {
+    redirectUrl: _view.redirectUrl,
+    redirectHost: _view.redirectHost,
+    title: 'agentic_commerce.consent.page_title' | trans,
+} %}
+
+{% block meta %}
+    {{ parent() }}
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="refresh" content="0;url={{ data.redirectUrl | e('html_attr') }}">
+{% endblock %}
+
+{% block content %}
+    <div class="box" data-qa="agentic-commerce-authorization-response">
+        <p>{{ 'agentic_commerce.redirect.heading' | trans({'%redirect_host%': data.redirectHost}) }}</p>
+        <a class="button" href="{{ data.redirectUrl }}" rel="noreferrer" data-qa="agentic-commerce-continue">
+            {{ 'agentic_commerce.redirect.continue' | trans }}
+        </a>
+    </div>
+{% endblock %}

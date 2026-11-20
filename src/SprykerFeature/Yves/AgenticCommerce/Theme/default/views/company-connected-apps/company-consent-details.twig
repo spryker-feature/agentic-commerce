@@ -1,0 +1,20 @@
+{# @var agenticCommerceConsent \Generated\Shared\Transfer\AgenticCommerceConsentTransfer #}
+
+{% set customer = agenticCommerceConsent.customer %}
+
+<td data-qa="agentic-commerce-company-consent-user">{{ customer ? customer.firstName ~ ' ' ~ customer.lastName : agenticCommerceConsent.principalReference }}</td>
+<td data-qa="agentic-commerce-company-consent-email">{{ customer ? customer.email : '' }}</td>
+<td data-qa="agentic-commerce-company-consent-app">{{ agenticCommerceConsent.clientNameAtConsent }}</td>
+<td data-qa="agentic-commerce-company-consent-scopes">
+    {% for scope in agenticCommerceConsent.grantedScopes %}
+        {{ (scopeGlossaryKeys[scope] ?? scope) | trans }}{% if not loop.last %}, {% endif %}
+    {% endfor %}
+</td>
+<td data-qa="agentic-commerce-company-consent-order-limit">
+    {% include '@AgenticCommerce/views/connected-apps/consent-constraints.twig' with {
+        agenticCommerceConsent: agenticCommerceConsent,
+    } only %}
+</td>
+<td data-qa="agentic-commerce-company-consent-last-used">
+    {{ agenticCommerceConsent.lastUsedAt ? date(agenticCommerceConsent.lastUsedAt) | formatDateTime : 'agentic_commerce.apps.label.never_used' | trans }}
+</td>

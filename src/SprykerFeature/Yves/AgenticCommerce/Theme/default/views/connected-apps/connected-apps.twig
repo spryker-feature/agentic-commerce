@@ -1,0 +1,69 @@
+{# @var data.agenticCommerceConsents \ArrayObject<\Generated\Shared\Transfer\AgenticCommerceConsentTransfer> #}
+
+{% extends template('page-layout-customer', 'CustomerPage') %}
+
+{% define data = {
+    agenticCommerceConsents: _view.agenticCommerceConsents,
+    disconnectForms: _view.disconnectForms,
+    principalLabels: _view.principalLabels,
+    scopeGlossaryKeys: _view.scopeGlossaryKeys,
+    title: 'agentic_commerce.apps.title' | trans,
+    activePage: 'connectedApps',
+    currentBreadcrumb: 'agentic_commerce.apps.title' | trans,
+} %}
+
+{% block breadcrumbs %}
+    {% include molecule('breadcrumb') with {
+        data: {
+            steps: [
+                {
+                    label: 'customer.account' | trans,
+                    url: url('customer/overview'),
+                },
+                {
+                    label: 'agentic_commerce.apps.title' | trans,
+                },
+            ],
+        },
+    } only %}
+{% endblock %}
+
+{% block customerContent %}
+    <div class="box" data-qa="agentic-commerce-connected-apps-list">
+        <p>{{ 'agentic_commerce.apps.intro' | trans }}</p>
+
+        {% for consent in data.agenticCommerceConsents %}
+            {% set appName = consent.agenticCommerceClient ? consent.agenticCommerceClient.name : consent.clientIdentifier %}
+            <div class="spacing-bottom spacing-bottom--big" data-qa="agentic-commerce-consent">
+                <h2 class="title title--h5">{{ appName }}</h2>
+                <p data-qa="agentic-commerce-consent-principal">{{ 'agentic_commerce.apps.label.principal' | trans }}: {{ data.principalLabels[consent.uuid] }}</p>
+                <p>{{ 'agentic_commerce.apps.label.store' | trans }}: {{ consent.storeName }}</p>
+                <p>
+                    {{ 'agentic_commerce.apps.label.scopes' | trans }}:
+                    {% for scope in consent.grantedScopes %}
+                        {{ data.scopeGlossaryKeys[scope] | trans }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </p>
+                <p>
+                    {{ 'agentic_commerce.apps.label.last_used' | trans }}:
+                    {{ consent.lastUsedAt ? date(consent.lastUsedAt) | formatDateTime : 'agentic_commerce.apps.label.never_used' | trans }}
+                </p>
+                {% include '@AgenticCommerce/views/connected-apps/consent-constraints.twig' with {
+                    agenticCommerceConsent: consent,
+                } only %}
+                <p>{{ 'agentic_commerce.apps.label.expires' | trans }}: {{ date(consent.expiresAt) | formatDateTime }}</p>
+
+                {% set disconnectForm = data.disconnectForms[consent.uuid] %}
+                {{ form_start(disconnectForm, {action: url('customer/connected-apps/disconnect')}) }}
+                    <p>{{ 'agentic_commerce.apps.confirm.body' | trans }}</p>
+                    <button type="submit" class="button button--hollow" data-qa="agentic-commerce-disconnect">{{ 'agentic_commerce.apps.disconnect' | trans }}</button>
+                {{ form_end(disconnectForm) }}
+            </div>
+        {% else %}
+            <div data-qa="agentic-commerce-connected-apps-empty">
+                <h2 class="title title--h5">{{ 'agentic_commerce.apps.empty.heading' | trans }}</h2>
+                <p>{{ 'agentic_commerce.apps.empty.body' | trans }}</p>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

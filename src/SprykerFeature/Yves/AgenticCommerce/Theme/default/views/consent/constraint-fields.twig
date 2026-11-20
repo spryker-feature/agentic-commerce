@@ -1,0 +1,64 @@
+{# @var constraintFields array<string, \Generated\Shared\Transfer\AgenticCommerceConstraintFieldTransfer> #}
+
+{# Never put the HTML `required` attribute on these inputs: a field hidden with its unticked scope would block the submission. #}
+
+{# The choices are the checkboxes of the field in the order of the options. #}
+{% macro optionTree(parentOption, options, optionParents, choices) %}
+    {% import _self as tree %}
+    <ul>
+        {% for optionValue, optionLabel in options %}
+            {% set optionParent = optionParents[optionValue] ?? '' %}
+            {% if optionParent not in options | keys %}
+                {% set optionParent = '' %}
+            {% endif %}
+            {% if optionParent == parentOption %}
+                <li>
+                    {{ form_widget(choices[loop.index0]) }}
+                    {% if optionValue in optionParents %}
+                        {{ tree.optionTree(optionValue, options, optionParents, choices) }}
+                    {% endif %}
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+{% endmacro %}
+
+{% import _self as tree %}
+
+{% for constraintType, constraintForm in form %}
+    {% set constraintField = constraintFields[constraintType] %}
+    {% set hintParameters = {} %}
+    {% for hintParameterName, hintParameterValue in constraintField.hintParameters %}
+        {% set hintParameters = hintParameters | merge({
+            (hintParameterName): constraintField.inputKind == 'money' ? hintParameterValue | money(true, constraintField.currencyCode) : hintParameterValue,
+        }) %}
+    {% endfor %}
+
+    <div {% if constraintScopes[constraintType] is defined %}data-constraint-scope="{{ constraintScopes[constraintType] }}"{% endif %}>
+        {{ form_label(constraintForm) }}
+        {% if constraintField.inputKind == 'money_period' %}
+            <div data-qa="agentic-commerce-constraint-{{ constraintType }}">
+                {{ form_widget(constraintForm.amount) }}
+                {{ form_widget(constraintForm.period) }}
+            </div>
+        {% elseif constraintField.inputKind == 'multi_select' %}
+            <div data-qa="agentic-commerce-constraint-{{ constraintType }}">
+                {% for choice in constraintForm %}
+                    {{ form_widget(choice) }}
+                {% endfor %}
+            </div>
+        {% elseif constraintField.inputKind == 'category_tree' %}
+            <div data-qa="agentic-commerce-constraint-{{ constraintType }}">
+                {{ tree.optionTree('', constraintField.options, constraintField.optionParents, constraintForm.children) }}
+            </div>
+        {% else %}
+            {{ form_widget(constraintForm, {attr: {'data-qa': 'agentic-commerce-constraint-' ~ constraintType}}) }}
+        {% endif %}
+        {% if constraintField.hintGlossaryKey %}
+            <p>{{ constraintField.hintGlossaryKey | trans(hintParameters) }}</p>
+        {% endif %}
+        {% if constraintForm.vars.errors | length > 0 %}
+            <div data-qa="agentic-commerce-constraint-error">{{ form_errors(constraintForm) }}</div>
+        {% endif %}
+    </div>
+{% endfor %}

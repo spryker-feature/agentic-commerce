@@ -1,0 +1,14 @@
+{% extends template('page-layout-main') %}
+
+{% define data = {
+    title: 'agentic_commerce.cart_handoff.invalid.title' | trans,
+    text: 'agentic_commerce.cart_handoff.invalid.text' | trans,
+} %}
+
+{% block content %}
+    <div class="box" data-qa="agentic-commerce-cart-handoff-invalid">
+        <h1 class="title title--h3">{{ data.title }}</h1>
+        <p>{{ data.text }}</p>
+        <a class="link" href="{{ url('home') }}">{{ 'agentic_commerce.error.back' | trans }}</a>
+    </div>
+{% endblock %}

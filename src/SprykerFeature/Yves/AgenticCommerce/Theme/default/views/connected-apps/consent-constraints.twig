@@ -1,0 +1,30 @@
+{# @var agenticCommerceConsent \Generated\Shared\Transfer\AgenticCommerceConsentTransfer #}
+
+{% for constraint in agenticCommerceConsent.constraints %}
+    {% if constraint.type == 'order_total_limit' and constraint.value.amount is defined and constraint.value.amount is not null and constraint.value.currency is defined and constraint.value.currency is not null %}
+        <p data-qa="agentic-commerce-consent-order-total-limit">
+            {{ 'agentic_commerce.apps.constraint.order_total_limit' | trans({
+                '%amount%': constraint.value.amount | money(true, constraint.value.currency),
+            }) }}
+        </p>
+    {% elseif constraint.type == 'order_budget' and constraint.value.amount is defined and constraint.value.amount is not null and constraint.value.currency is defined and constraint.value.currency is not null and constraint.value.period is defined and constraint.value.period is not null %}
+        <p data-qa="agentic-commerce-consent-order-budget">
+            {{ 'agentic_commerce.apps.constraint.order_budget' | trans({
+                '%amount%': constraint.value.amount | money(true, constraint.value.currency),
+                '%period%': ('agentic_commerce.constraint.order_budget.period.' ~ constraint.value.period) | trans,
+            }) }}
+        </p>
+    {% elseif constraint.type == 'merchant_allowlist' and constraint.valueLabels | length > 0 %}
+        <p data-qa="agentic-commerce-consent-merchant-allowlist">
+            {{ 'agentic_commerce.apps.constraint.merchant_allowlist' | trans({
+                '%names%': constraint.valueLabels | join(', '),
+            }) }}
+        </p>
+    {% elseif constraint.type == 'category_allowlist' and constraint.valueLabels | length > 0 %}
+        <p data-qa="agentic-commerce-consent-category-allowlist">
+            {{ 'agentic_commerce.apps.constraint.category_allowlist' | trans({
+                '%names%': constraint.valueLabels | join(', '),
+            }) }}
+        </p>
+    {% endif %}
+{% endfor %}

@@ -1,0 +1,52 @@
+{# @var data.agenticCommerceConsents \ArrayObject<\Generated\Shared\Transfer\AgenticCommerceConsentTransfer> #}
+
+{% extends template('page-layout-company', 'CompanyPage') %}
+
+{% define data = {
+    agenticCommerceConsents: _view.agenticCommerceConsents,
+    revokeForms: _view.revokeForms,
+    scopeGlossaryKeys: _view.scopeGlossaryKeys,
+    title: 'agentic_commerce.company_apps.title' | trans,
+    activePage: 'connected-apps',
+    currentBreadcrumb: 'agentic_commerce.company_apps.title',
+} %}
+
+{% block companyContent %}
+    <div class="box" data-qa="agentic-commerce-company-connected-apps-list">
+        <p>{{ 'agentic_commerce.company_apps.intro' | trans }}</p>
+
+        {% if data.agenticCommerceConsents | length > 0 %}
+            <table class="table table--expand">
+                <thead>
+                    <tr>
+                        <th>{{ 'agentic_commerce.company_apps.label.user' | trans }}</th>
+                        <th>{{ 'agentic_commerce.company_apps.label.email' | trans }}</th>
+                        <th>{{ 'agentic_commerce.company_apps.label.app' | trans }}</th>
+                        <th>{{ 'agentic_commerce.company_apps.label.scopes' | trans }}</th>
+                        <th>{{ 'agentic_commerce.company_apps.label.order_limit' | trans }}</th>
+                        <th>{{ 'agentic_commerce.apps.label.last_used' | trans }}</th>
+                        <th>{{ 'agentic_commerce.company_apps.label.actions' | trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for consent in data.agenticCommerceConsents %}
+                        <tr data-qa="agentic-commerce-company-consent">
+                            {% include '@AgenticCommerce/views/company-connected-apps/company-consent-details.twig' with {
+                                agenticCommerceConsent: consent,
+                                scopeGlossaryKeys: data.scopeGlossaryKeys,
+                            } only %}
+                            <td>
+                                {% set revokeForm = data.revokeForms[consent.uuid] %}
+                                {{ form_start(revokeForm, {action: url('company/connected-apps/revoke')}) }}
+                                    <button type="submit" class="button button--hollow" data-qa="agentic-commerce-company-revoke">{{ 'agentic_commerce.company_apps.revoke' | trans }}</button>
+                                {{ form_end(revokeForm) }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p data-qa="agentic-commerce-company-connected-apps-empty">{{ 'agentic_commerce.company_apps.empty' | trans }}</p>
+        {% endif %}
+    </div>
+{% endblock %}

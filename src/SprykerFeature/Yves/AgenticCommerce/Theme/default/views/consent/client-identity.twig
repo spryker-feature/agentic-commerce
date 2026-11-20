@@ -1,0 +1,9 @@
+{# @var agenticCommerceClient \Generated\Shared\Transfer\AgenticCommerceClientTransfer #}
+
+{% if showLogo and agenticCommerceClient.logoUri %}
+    <img src="{{ agenticCommerceClient.logoUri }}" alt="{{ agenticCommerceClient.name }}" referrerpolicy="no-referrer" data-qa="agentic-commerce-client-logo">
+{% endif %}
+
+{% if clientHost %}
+    <p data-qa="agentic-commerce-client-host">{{ 'agentic_commerce.consent.client_uri' | trans({'%client_host%': clientHost}) }}</p>
+{% endif %}
